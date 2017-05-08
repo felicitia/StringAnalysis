@@ -8,7 +8,7 @@ import java.util.Map;
 
 import soot.Scene;
 import soot.options.Options;
-import usc.yixue.AnalysisHelper;
+import usc.yixue.ViolistAnalysisHelper;
 
 public class AndroidMain {
 
@@ -27,10 +27,9 @@ public class AndroidMain {
 	args[1]: /Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android/WeatherApp
 	args[2]: /classlist.txt 
 	args[3]: /app-release(no_xml_handler).apk
-	args[4]: edu.usc.yixue.weatherapp
  */
 		JavaAndroid ja = new JavaAndroid(args[0],args[1],args[2],args[3],target,1);
 		
-		AnalysisHelper.outputRequestMap(AnalysisHelper.getTargetStmtList(args[1]), args[1]+"/"+args[4]+".json");
+//		AnalysisHelper.outputRequestMap(AnalysisHelper.getTargetStmtList(args[1]), args[1]+"/"+args[4]+".json");
 	}
 }

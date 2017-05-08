@@ -29,7 +29,7 @@ import usc.sql.ir.ExternalPara;
 import usc.sql.ir.InternalVar;
 import usc.sql.ir.T;
 import usc.sql.ir.Variable;
-import usc.yixue.AnalysisHelper;
+import usc.yixue.ViolistAnalysisHelper;
 import usc.yixue.Configuration;
 import util.DOTUtil;
 import CallGraph.NewNode;
@@ -83,6 +83,9 @@ public class JavaAndroid {
 		//"/home/yingjun/Documents/StringAnalysis/MethodSummary/"
 		//"Usage: rt.jar app_folder classlist.txt"
 		App=new AndroidApp(rtjar,apkpath,classlistPath, appfolder);
+		
+		ViolistAnalysisHelper.outputRequestMap(ViolistAnalysisHelper.getTargetStmtList(appfolder), appfolder+"/"+App.getPkgname()+".json");
+		
 		Map<String,Map<String,Set<Variable>>> targetMap = new HashMap<>();
     	Map<String,Set<NodeInterface>> paraMap = new HashMap<>();
     	Map<String,Set<String>> fieldMap = new HashMap<>();
@@ -1283,22 +1286,35 @@ public class JavaAndroid {
         return targetMethod;
     }
 	
-	public void addParentEdgesRecursive(String child, DOTGraph graph, StringCallGraph cg){
+	public void addParentEdgesRecursive(String child, DOTGraph graph, StringCallGraph cg, Map<String, String> targetMethodIdMap){
 		if(cg.getParents(child) == null || cg.getParents(child).isEmpty()){
 			return;
 		}
 		for(String parent: cg.getParents(child)){
             	DOTEdge edge = new DOTEdge();
-            	edge.setChild(child);
-            	edge.setParent(parent);
+            	String right;
+            	String left;
+            	if(targetMethodIdMap.containsKey(child)){
+            		String nodeIds = targetMethodIdMap.get(child);
+            		 right = child + nodeIds;
+            		 left = parent + nodeIds;
+            		 targetMethodIdMap.put(parent, nodeIds);
+            	}else{
+            		System.out.println("in ViolistAnalysisHelper.addParentEdgesRecursive(): can't find node ids in the map! this shouldn't happen! :(");
+            		right = child;
+            		left = parent;
+            	}
+            	edge.setChild(right);
+            	edge.setParent(left);
             	graph.addEdge(edge);
-            	addParentEdgesRecursive(parent, graph, cg);
+            	addParentEdgesRecursive(parent, graph, cg, targetMethodIdMap);
 		}
 	}
 	
 	public void printTargetCallGraph(StringCallGraph cg, DOTGraph graph, String appfolder){
-		for(String method: AnalysisHelper.getTargetMethodSet(appfolder)){
-			addParentEdgesRecursive(method, graph, cg);
+		Map<String, String> targetMethodIdMap = ViolistAnalysisHelper.getTargetMethodIdMap(appfolder);
+		for(String method: ViolistAnalysisHelper.getTargetMethodSet(appfolder)){
+			addParentEdgesRecursive(method, graph, cg, targetMethodIdMap);
 		}
 		DOTUtil.DOT2File(graph, appfolder+"/Output/targetCG.dot");
 	}

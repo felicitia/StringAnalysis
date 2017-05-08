@@ -194,7 +194,7 @@ public class Instrumenter {
 	public static void instrumentPrefetch(Body body) {
 		String bodySig = body.getMethod().getSignature();
 		String triggerMethodWithId = getSigWithId(bodySig,
-				AnalysisHelper.getTriggerMethods(appfolder));
+				ViolistAnalysisHelper.getTriggerMethods(appfolder));
 		if (triggerMethodWithId != null) {
 			// nodeIds example: 303#299#307
 			String nodeIds = triggerMethodWithId.replace(bodySig + "#", "");

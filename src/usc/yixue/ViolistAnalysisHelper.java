@@ -5,8 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.simple.JSONArray;
@@ -16,14 +18,17 @@ import org.json.simple.parser.ParseException;
 
 import util.JSONUtil;
 
-
-public class AnalysisHelper {
+public class ViolistAnalysisHelper {
 
 	static Set<String> targetMethods = null;
 
 	static List<TargetStmt> targetStmtList = null;
 	
 	static Set<String> triggerMethods = null;
+	
+	static Map<String, String> targetMethodIdMap = null;
+	
+	static final String METHOD_NODEID_SEP = "#"; 
 	
 //	static  String appfolder = null; //arg0
 //	static  String pkgname = null; //arg1
@@ -35,8 +40,26 @@ public class AnalysisHelper {
 //		pkgname = args[1];
 //		apkname = args[2];
 		
-//		outputRequestMap(getTargetStmtList(), Configuration.requestMapOutput);
+//		outputRequestMap(getTargetStmtList(""), "");
 //		System.out.println(getTriggerMethods());
+	}
+	
+	public static Map<String, String> getTargetMethodIdMap(String appfolder){
+		if(targetMethodIdMap == null){
+			targetMethodIdMap = new HashMap<String, String>();
+			for(TargetStmt stmt: getTargetStmtList(appfolder)){
+				if(targetMethodIdMap.containsKey(stmt.methodName)){
+					//already have a nodeId with the same method, then append the current nodeId
+					StringBuilder value = new StringBuilder(targetMethodIdMap.get(stmt.methodName));
+					value.append(METHOD_NODEID_SEP);
+					value.append(stmt.nodeId);
+					targetMethodIdMap.put(stmt.methodName, value.toString());
+				}else{
+					targetMethodIdMap.put(stmt.methodName, ""+stmt.nodeId);
+				}
+			}
+		}
+		return targetMethodIdMap;
 	}
 
 	public static Set<String> getTriggerMethods(String appfolder){
@@ -53,9 +76,9 @@ public class AnalysisHelper {
 					for(int i=0; i<valueArray.size(); i++){
 						//value example: "<edu.usc.yixue.weatherapp.MainActivity$1: void onClick(android.view.View)>#303#299#307"
 						String value = (String) valueArray.get(i);
-						String[] tokens = value.split("#");
+						String[] tokens = value.split(METHOD_NODEID_SEP);
 						for(int j=1; j<tokens.length; j++){
-							triggerMethod.append("#"+tokens[j]);
+							triggerMethod.append(METHOD_NODEID_SEP+tokens[j]);
 						}
 						triggerMethods.add(triggerMethod.toString());
 					}
@@ -109,6 +132,7 @@ public class AnalysisHelper {
 		return targetStmtList;
 	}
 
+	//no nodeId information
 	public static Set<String> getTargetMethodSet(String appfolder) {
 		if (targetMethods == null) {
 			targetMethods = new HashSet<String>();
@@ -132,13 +156,19 @@ public class AnalysisHelper {
 		if(value.contains("Unknown")){
 			String[] substrs = value.split("Unknown");
 			JSONArray substrArray = new JSONArray();
-			for(String substr: substrs){
-				substrArray.add(substr);
+			if(substrs.length == 0){ //the whole thing is [Unknown]
 				substrArray.add("null");
+				stmtJSON.put("unknownCount", 1);
+				stmtJSON.put("subStrings", substrArray);
+			}else{
+				for(String substr: substrs){
+					substrArray.add(substr);
+					substrArray.add("null");
+				}
+				substrArray.remove(substrArray.size()-1);
+				stmtJSON.put("unknownCount", substrs.length-1);
+				stmtJSON.put("subStrings", substrArray);
 			}
-			substrArray.remove(substrArray.size()-1);
-			stmtJSON.put("unknownCount", substrs.length-1);
-			stmtJSON.put("subStrings", substrArray);
 		}else{
 			//constant string
 			stmtJSON.put("unknownCount", 0);
