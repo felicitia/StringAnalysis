@@ -28,7 +28,7 @@ public class ViolistAnalysisHelper {
 	
 	static Map<String, String> targetMethodIdMap = null;
 	
-	static final String METHOD_NODEID_SEP = "#"; 
+	static final String METHOD_NODEID_SEP = "@"; 
 	
 //	static  String appfolder = null; //arg0
 //	static  String pkgname = null; //arg1
@@ -55,7 +55,7 @@ public class ViolistAnalysisHelper {
 					value.append(stmt.nodeId);
 					targetMethodIdMap.put(stmt.methodName, value.toString());
 				}else{
-					targetMethodIdMap.put(stmt.methodName, ""+stmt.nodeId);
+					targetMethodIdMap.put(stmt.methodName, METHOD_NODEID_SEP+stmt.nodeId);
 				}
 			}
 		}
@@ -74,7 +74,7 @@ public class ViolistAnalysisHelper {
 					JSONArray valueArray = (JSONArray)jsonObject.get(keyStr);
 					StringBuilder triggerMethod = new StringBuilder(keyStr);
 					for(int i=0; i<valueArray.size(); i++){
-						//value example: "<edu.usc.yixue.weatherapp.MainActivity$1: void onClick(android.view.View)>#303#299#307"
+						//value example: "<edu.usc.yixue.weatherapp.MainActivity$1: void onClick(android.view.View)>@303@299@307"
 						String value = (String) valueArray.get(i);
 						String[] tokens = value.split(METHOD_NODEID_SEP);
 						for(int j=1; j<tokens.length; j++){
