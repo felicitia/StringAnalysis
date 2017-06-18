@@ -1,0 +1,48 @@
+package edu.usc.sql.graphs;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import soot.toolkits.graph.BriefUnitGraph;
+import edu.usc.sql.graphs.cdg.CDG;
+import edu.usc.sql.graphs.cdg.Dominator;
+import edu.usc.sql.graphs.cdg.PostDominator;
+import edu.usc.sql.graphs.cfg.CFGInterface;
+import edu.usc.sql.graphs.cfg.SootCFG;
+
+public class CDGTest {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		
+		//Test program to build CFG from a class and generate Dominance, Post Dominance and CDG of individual nodes
+		
+		
+		Map<String, CFGInterface> cfgMap = new HashMap<String, CFGInterface>();
+		 
+		 cfgMap = SootCFG.buildCFGs("/resources/", "hw/Subject3.class"); 
+
+		 CFGInterface cfg = cfgMap.get("<hw.Subject3: void main(java.lang.String[])>");
+		 
+		 System.out.println("Edges:"+cfg.getAllEdges());
+		 System.out.println("Nodes"+cfg.getAllNodes());
+		 
+		 System.out.println(cfg.toDot());
+		 
+		 System.out.println("Calculating Dominance:");
+		 
+		 Dominator Dom = new Dominator(cfg.getAllNodes(), cfg.getAllEdges(), cfg.getEntryNode());
+		 
+		 PostDominator PostDom = new PostDominator(cfg.getAllNodes(), cfg.getAllEdges(), cfg.getExitNode());
+		 
+		 CDG cdg = new CDG(cfg.getAllNodes(), cfg.getAllEdges(), cfg.getExitNode());
+		 
+		 System.out.println("Node and its dependants:"); 
+		  
+		 
+		 System.out.println(cdg.getControlDependantGraph().toDot());
+		
+	}
+
+}

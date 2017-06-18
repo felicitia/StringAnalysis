@@ -30,7 +30,6 @@ import usc.sql.ir.InternalVar;
 import usc.sql.ir.T;
 import usc.sql.ir.Variable;
 import usc.yixue.ViolistAnalysisHelper;
-import usc.yixue.Configuration;
 import util.DOTUtil;
 import CallGraph.NewNode;
 import CallGraph.StringCallGraph;

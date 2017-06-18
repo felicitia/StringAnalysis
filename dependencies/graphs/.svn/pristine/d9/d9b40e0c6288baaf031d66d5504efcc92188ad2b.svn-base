@@ -1,0 +1,137 @@
+package edu.usc.sql.graphs.cdg;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import edu.usc.sql.graphs.EdgeInterface;
+import edu.usc.sql.graphs.Node;
+import edu.usc.sql.graphs.NodeInterface;
+
+public class Dominator {
+	private Set<NodeInterface> allNode;
+	private Set<EdgeInterface> allEdge;
+//	private Set<DNode> allDNode = new HashSet<>();
+	private Map<NodeInterface,Set<NodeInterface>> domSet = new HashMap<>();
+	public Dominator(Set<NodeInterface> allNode,Set<EdgeInterface> allEdge)
+	{
+		this.allNode = allNode;
+		this.allEdge = allEdge;
+	//	this.allNode=allNode;
+		for(NodeInterface n:allNode)
+		{	
+			Set<NodeInterface> dSet = new HashSet<>();
+			domSet.put(n, dSet);
+	//		allDNode.add(new DNode(n));
+		}
+	}
+	private void initialize()
+	{
+		for(NodeInterface n:allNode)
+		{
+			if(n.getInEdges().isEmpty())
+				domSet.get(n).add(n);
+			else
+			{
+				for(NodeInterface nn: allNode)
+					domSet.get(n).add(nn);
+			}
+
+		}
+	}
+	private boolean compareTwoSet(Set<NodeInterface> oldset,Set<NodeInterface> newset)
+	{
+		if(oldset.containsAll(newset)&&newset.containsAll(oldset))
+			return true;
+		else 
+			return false;
+	}
+	public boolean isDominate(NodeInterface source,NodeInterface dest)
+	{
+		for(NodeInterface n:allNode)
+		{
+			if(n.equals(dest))
+				if(domSet.get(n).contains(source))
+					return true;
+		}
+		return false;
+	}
+	public void computeDominator()
+	{
+		initialize();
+		
+		Map<NodeInterface,ArrayList<NodeInterface>> preList = new HashMap<>();
+		//Create predecessor list for each node
+		for(NodeInterface node:allNode)
+		{
+			ArrayList<NodeInterface> nodePre = new ArrayList<> ();
+			for(EdgeInterface e: node.getInEdges())
+			{
+				for(NodeInterface n:allNode)
+					if(n.equals(e.getSource()))			
+						nodePre.add(n);			
+						
+			}
+			
+			preList.put(node, nodePre);
+			
+		}
+		boolean change = true;
+		
+		while(change)
+		{
+			change = false;
+			for(NodeInterface n: allNode)
+			{
+				//exclude the entry node
+				if(!n.getInEdges().isEmpty())
+				{
+					Set<NodeInterface> temp = new HashSet<>();
+					
+					//initialize
+		
+					NodeInterface first = preList.get(n).get(0);
+					for(NodeInterface nn: domSet.get(first))
+						temp.add(nn);
+					//intersect
+					for(NodeInterface d:preList.get(n))
+					{
+						temp.retainAll(domSet.get(d));
+					}
+					//union itself
+					if(!temp.contains(n))
+						temp.add(n);
+										
+					
+					if(!compareTwoSet(domSet.get(n), temp))
+					{
+						change=true;
+						domSet.get(n).clear();
+						for(NodeInterface nn:temp)
+						{
+							domSet.get(n).add(nn);
+						}
+		
+					}
+				}
+			}
+		}
+	/*	for(NodeInterface n: allNode)
+		{
+			System.out.print(n.getName()+": ");
+			for(NodeInterface in:domSet.get(n))
+				System.out.print(in.getName()+" ");
+			System.out.println("size: "+domSet.get(n).size());
+		}*/
+		
+	}
+	
+	public Map<NodeInterface,Set<NodeInterface>> getDominatorSet()
+	{
+		return domSet;
+	}
+}
+

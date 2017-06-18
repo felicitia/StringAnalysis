@@ -19,10 +19,9 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/graphs"/>
-	<classpathentry kind="lib" path="/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/ClasslistGenerator/Pixy.jar"/>
-	<classpathentry kind="lib" path="/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/ClasslistGenerator/soot-trunk.jar"/>
 	<classpathentry kind="lib" path="lib/json-simple-1.1.1.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/PrefetchProject"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/CS610"/>
+	<classpathentry kind="lib" path="lib/soot-trunk.jar"/>
+	<classpathentry kind="lib" path="lib/Pixy.jar"/>
+	<classpathentry kind="lib" path="lib/poi-3.13-beta1-20150723.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

@@ -1,0 +1,138 @@
+package edu.usc.sql.graphs.cdg;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import edu.usc.sql.graphs.EdgeInterface;
+import edu.usc.sql.graphs.NodeInterface;
+
+public class PostDominator {
+	private Set<NodeInterface> allNode;
+	private Set<EdgeInterface> allEdge;
+	private NodeInterface entry;
+	//private Set<DNode> allDNode = new HashSet<>();
+	private Map<NodeInterface,Set<NodeInterface>> postdomSet = new HashMap<>();
+	private Map<NodeInterface,List<NodeInterface>> dTable = new HashMap<>();
+	
+	public PostDominator(Set<NodeInterface> allNode,Set<EdgeInterface> allEdge,NodeInterface entry)
+	{
+		this.allNode = allNode;
+		this.allEdge = allEdge;
+		this.entry = entry;
+	//	this.allNode=allNode;
+		for(NodeInterface n:allNode)
+		{	
+			Set<NodeInterface> dSet = new HashSet<>();
+			postdomSet.put(n, dSet);
+			
+			List<NodeInterface> temp = new ArrayList<>();
+			dTable.put(n,temp);
+		}
+	}
+	private void initialize()
+	{
+		for(NodeInterface n:allNode)
+		{
+			if(n.getOutEdges().isEmpty())
+				postdomSet.get(n).add(n);
+			else
+			{
+				for(NodeInterface nn: allNode)
+					postdomSet.get(n).add(nn);
+			}
+		}
+	}
+	private boolean compareTwoSet(Set<NodeInterface> oldset,Set<NodeInterface> newset)
+	{
+		if(oldset.containsAll(newset)&&newset.containsAll(oldset))
+			return true;
+		else 
+			return false;
+	}
+	public boolean isPostDominate(NodeInterface source,NodeInterface dest)
+	{
+		for(NodeInterface n:allNode)
+		{
+			if(n.equals(dest))
+				if(postdomSet.get(n).contains(source))
+					return true;
+		}
+		return false;
+	}
+	public void computePostDominator()
+	{
+		initialize();
+		Map<NodeInterface,ArrayList<NodeInterface>> sucList = new HashMap<>();
+		//Create successor list for each node
+		for(NodeInterface node:allNode)
+		{
+			ArrayList<NodeInterface> nodeSuc = new ArrayList<> ();
+			for(EdgeInterface e: node.getOutEdges())
+			{
+				for(NodeInterface n:allNode)
+					if(n.equals(e.getDestination()))			
+						nodeSuc.add(n);			
+						
+			}
+			
+			sucList.put(node, nodeSuc);
+			
+		}
+		boolean change = true;
+		
+		while(change)
+		{
+			change = false;
+			for(NodeInterface n: allNode)
+			{
+				//exclude the exit node
+				if(!n.getOutEdges().isEmpty())
+				{
+					Set<NodeInterface> temp = new HashSet<>();
+					
+					//initialize
+					NodeInterface first = sucList.get(n).get(0);
+					for(NodeInterface nn:postdomSet.get(first))
+						temp.add(nn);
+					//intersect
+					for(NodeInterface d:sucList.get(n))
+					{
+						temp.retainAll(postdomSet.get(d));
+					}
+					//union itself
+					if(!temp.contains(n))
+						temp.add(n);
+										
+					
+					if(!compareTwoSet(postdomSet.get(n), temp))
+					{
+						change=true;
+						postdomSet.get(n).clear();
+						for(NodeInterface nn:temp)
+						{
+							postdomSet.get(n).add(nn);
+						}
+		
+					}
+				}
+			}
+		}
+		
+
+	}
+	public Map<NodeInterface,List<NodeInterface>> getPostDominatorTable()
+	{
+		for(NodeInterface dn: allNode)
+		{
+			for(NodeInterface n:postdomSet.get(dn))
+				dTable.get(n).add(dn);
+		}
+		return dTable;
+	}
+
+}
+

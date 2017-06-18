@@ -1,0 +1,29 @@
+package edu.usc.sql.graphs.cdg;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import edu.usc.sql.graphs.NodeInterface;
+
+public class DNode {
+	private NodeInterface node;
+	private Set<NodeInterface> domSet = new HashSet<>();
+
+	public DNode(NodeInterface node)
+	{
+		this.node = node;
+	}
+	
+	public NodeInterface getNode() {
+		return node;
+	}
+	public void setNode(NodeInterface node) {
+		this.node = node;
+	}
+
+	public Set<NodeInterface> getDomSet() {
+		return domSet;
+	}
+
+
+}
