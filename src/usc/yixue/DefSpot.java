@@ -5,8 +5,8 @@ public class DefSpot {
 	String jimple;
 	String nodeId;
 	String pkgName;
-	String body;
-	int subStrPos;
+	String body; //the method that contains the def spot, not the method in statistic.txt!
+	int subStrPos; // the position of the unknown substring in the URLMap (pkgname.json), count from 0
 	
 	public String getBody() {
 		return body;

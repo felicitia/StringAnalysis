@@ -14,6 +14,9 @@ public class ProxyHelper {
 
 	public final static HashMap<String, String> jimpleReplaceMap = new HashMap<String, String>();
 	
+	/**
+	 * change this to list? Body shouldn't be the key, cause it might be duplicated, e.g., one method contains multiple def spots
+	 */
 	public final static HashMap<String, DefSpot> defSpotMap = new HashMap<String, DefSpot>(); //body is the key
 
 	final static String ProxyClass = "usc.yixue.Proxy";
