@@ -21,29 +21,14 @@ import soot.options.Options;
 public class DefFinder {
 
 	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/SmallApps/App94"; 
+	final static String apkName = "com.androidlab.videoroad.apk";
 	final static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
 	final static String pkgName = "com.androidlab.videoroad";
-	static List<DefSpot> defSpotList = new ArrayList<DefSpot>();
-	static List<TargetField> targetFieldList = new ArrayList<TargetField>();
+	static List<DefSpot> defSpotList = null;
+	static List<TargetField> targetFieldList = null;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		sootSettingAndroid(args[2], androidJar);
-		
-		add2TargetFieldList(); // read from targetField.csv
-		
-		for(TargetField field: targetFieldList){
-			defSpotList.addAll(createDefSpots(field));
-		}
-		
-		for(DefSpot defSpot: defSpotList){
-			System.out.println("body = " + defSpot.body);
-			System.out.println("jimple = " + defSpot.jimple);
-			System.out.println("node Id = " + defSpot.nodeId);
-			System.out.println("pkg name = " + defSpot.pkgName);
-			System.out.println("substr pos = " + defSpot.subStrPos);
-			System.out.println();
-		}
 	}
 
 	public static List<DefSpot> createDefSpots(TargetField field){
@@ -79,28 +64,30 @@ public class DefFinder {
 		return defSpotsOfField;
 	}
 	
-	/**
-	 * hardcode the TargetField List now
-	 */
-	public static void add2TargetFieldList(){
-		String csvFilePath = appFolder+"/Input/targetField.csv";
-		try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
-			String sCurrentLine;
-			br.readLine(); //skip the header
-			while ((sCurrentLine = br.readLine()) != null) {
-				String[] values = sCurrentLine.split(",");
-				TargetField targetFiled = new TargetField();
-				targetFiled.classBelonged = values[0];
-				targetFiled.fieldName = values[1];
-				targetFiled.nodeId = values[2];
-				targetFiled.pkgName = pkgName;
-				targetFiled.substrPos = Integer.parseInt(values[3]);
-				targetFieldList.add(targetFiled);
-			}
+	// read from targetField.csv
+	public static List<TargetField> getTargetFieldList(){
+		if(targetFieldList == null){
+			targetFieldList = new ArrayList<TargetField>();
+			String csvFilePath = appFolder+"/Input/targetField.csv";
+			try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
+				String sCurrentLine;
+				br.readLine(); //skip the header
+				while ((sCurrentLine = br.readLine()) != null) {
+					String[] values = sCurrentLine.split(",");
+					TargetField targetFiled = new TargetField();
+					targetFiled.classBelonged = values[0];
+					targetFiled.fieldName = values[1];
+					targetFiled.nodeId = values[2];
+					targetFiled.pkgName = pkgName;
+					targetFiled.substrPos = Integer.parseInt(values[3]);
+					targetFieldList.add(targetFiled);
+				}
 
-		} catch (IOException e) {
-			e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+		return targetFieldList;
 	}
 
 	public static void sootSettingAndroid(String apkPath, String androidJar){
@@ -126,5 +113,25 @@ public class DefFinder {
 				List<String> stringlist = new LinkedList<String>();
 				stringlist.add(apkPath);
 				Options.v().set_process_dir(stringlist);
+	}
+	
+	public static List<DefSpot> getDefSpotList(){
+		if(defSpotList == null){
+			defSpotList = new ArrayList<DefSpot>();
+			sootSettingAndroid(appFolder+"/"+apkName, androidJar);
+			 
+			for(TargetField field: getTargetFieldList()){
+				defSpotList.addAll(createDefSpots(field));
+			}
+			for(DefSpot defSpot: defSpotList){
+				System.out.println("body = " + defSpot.body);
+				System.out.println("jimple = " + defSpot.jimple);
+				System.out.println("node Id = " + defSpot.nodeId);
+				System.out.println("pkg name = " + defSpot.pkgName);
+				System.out.println("substr pos = " + defSpot.subStrPos);
+				System.out.println();
+			}
+		}
+		return defSpotList;
 	}
 }
