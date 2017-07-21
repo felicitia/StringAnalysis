@@ -1,10 +1,12 @@
 package usc.yixue;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
 
 import soot.Body;
 import soot.PatchingChain;
@@ -18,8 +20,9 @@ import soot.options.Options;
 
 public class DefFinder {
 
-	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android/WeatherApp"; 
+	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/SmallApps/App94"; 
 	final static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
+	final static String pkgName = "com.androidlab.videoroad";
 	static List<DefSpot> defSpotList = new ArrayList<DefSpot>();
 	static List<TargetField> targetFieldList = new ArrayList<TargetField>();
 
@@ -27,7 +30,7 @@ public class DefFinder {
 		// TODO Auto-generated method stub
 		sootSettingAndroid(args[2], androidJar);
 		
-		add2TargetFieldList(); //hardcoded function
+		add2TargetFieldList(); // read from targetField.csv
 		
 		for(TargetField field: targetFieldList){
 			defSpotList.addAll(createDefSpots(field));
@@ -35,7 +38,10 @@ public class DefFinder {
 		
 		for(DefSpot defSpot: defSpotList){
 			System.out.println("body = " + defSpot.body);
-			System.out.println("jimple " + defSpot.jimple);
+			System.out.println("jimple = " + defSpot.jimple);
+			System.out.println("node Id = " + defSpot.nodeId);
+			System.out.println("pkg name = " + defSpot.pkgName);
+			System.out.println("substr pos = " + defSpot.subStrPos);
 			System.out.println();
 		}
 	}
@@ -77,23 +83,24 @@ public class DefFinder {
 	 * hardcode the TargetField List now
 	 */
 	public static void add2TargetFieldList(){
-		TargetField targetFiled = new TargetField();
-		targetFiled.classBelonged = "edu.usc.yixue.weatherapp.MainActivity";
-		targetFiled.fieldName = "cityName";
-		targetFiled.nodeId = ""+299;
-		targetFiled.pkgName = "edu.usc.yixue.weatherapp";
-		targetFiled.substrPos = 1;
+		String csvFilePath = appFolder+"/Input/targetField.csv";
+		try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
+			String sCurrentLine;
+			br.readLine(); //skip the header
+			while ((sCurrentLine = br.readLine()) != null) {
+				String[] values = sCurrentLine.split(",");
+				TargetField targetFiled = new TargetField();
+				targetFiled.classBelonged = values[0];
+				targetFiled.fieldName = values[1];
+				targetFiled.nodeId = values[2];
+				targetFiled.pkgName = pkgName;
+				targetFiled.substrPos = Integer.parseInt(values[3]);
+				targetFieldList.add(targetFiled);
+			}
 
-		TargetField targetFiled2 = new TargetField();
-		targetFiled2.classBelonged = "edu.usc.yixue.weatherapp.MainActivity";
-		targetFiled2.fieldName = "cityId";
-		targetFiled2.nodeId = ""+303;
-		targetFiled2.pkgName = "edu.usc.yixue.weatherapp";
-		targetFiled2.substrPos = 1;
-		
-		
-		targetFieldList.add(targetFiled);
-		targetFieldList.add(targetFiled2);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public static void sootSettingAndroid(String apkPath, String androidJar){
