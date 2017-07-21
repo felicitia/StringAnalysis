@@ -33,23 +33,20 @@ import soot.options.Options;
 public class Instrumenter {
 
 	private static int tmpCount = 0;
-	
-	static String newAppDir = null; //arg0
-	static String androidJar = null; //arg1
-	static String appfolder = null; //arg2
+
+	final static String apkName = "app-release.apk";
+	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/weatherapp";
+	final static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
+	final static String pkgName = "edu.usc.yixue.weatherapp";
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		newAppDir = args[0];
-		androidJar = args[1];
-		appfolder = args[2];
-		
 		// prefer Android APK files// -src-prec apk
 		Options.v().set_src_prec(Options.src_prec_apk);
 		// output as APK, too//-f J
 		Options.v().set_output_format(Options.output_format_dex);
-		Options.v().set_output_dir(newAppDir);
+		Options.v().set_output_dir(appFolder + "/Output");
 		Options.v().set_android_jars(androidJar);
 		Options.v().set_whole_program(true);
 		Options.v().set_verbose(false);
@@ -67,7 +64,7 @@ public class Instrumenter {
 		Options.v().set_prepend_classpath(true);
 
 		List<String> stringlist = new LinkedList<String>();
-		stringlist.add(args[2]);
+		stringlist.add(appFolder + "/" + apkName);
 		Options.v().set_process_dir(stringlist);
 
 		Scene.v().addBasicClass("java.io.PrintStream", SootClass.SIGNATURES);
@@ -84,8 +81,10 @@ public class Instrumenter {
 					protected void internalTransform(final Body body,
 							String phaseName,
 							@SuppressWarnings("rawtypes") Map options) {
-//						instrumentAll(body);
-						 instrumentTimestamp(body, ProxyHelper.getInputStreamOriginal);
+						// instrumentAll(body);
+						// instrumentTimestamp(body,
+						// ProxyHelper.getInputStreamOriginal);
+						instrumentSendDef(body);
 						body.validate();
 					}
 
@@ -96,6 +95,7 @@ public class Instrumenter {
 
 	/**
 	 * instrument timestamps before "sig" and after "sig"
+	 * 
 	 * @param body
 	 * @param sig
 	 */
@@ -105,17 +105,17 @@ public class Instrumenter {
 			final Stmt stmt = (Stmt) iter.next();
 			if (stmt.containsInvokeExpr()) {
 				InvokeExpr invoke = stmt.getInvokeExpr();
-				if (invoke
-						.getMethod()
-						.getSignature()
-						.equals(sig)) {
+				if (invoke.getMethod().getSignature().equals(sig)) {
 					SootMethod printTimeStamp = ProxyHelper
 							.findMethod(ProxyHelper.printTimeStamp);
-					System.out.println("@@@@@@@@@@ sm = " + printTimeStamp.getSignature());
+					System.out.println("@@@@@@@@@@ sm = "
+							+ printTimeStamp.getSignature());
 					Stmt newinvoke = Jimple.v().newInvokeStmt(
-							Jimple.v().newStaticInvokeExpr(printTimeStamp.makeRef()));
+							Jimple.v().newStaticInvokeExpr(
+									printTimeStamp.makeRef()));
 					Stmt newinvoke2 = Jimple.v().newInvokeStmt(
-							Jimple.v().newStaticInvokeExpr(printTimeStamp.makeRef()));
+							Jimple.v().newStaticInvokeExpr(
+									printTimeStamp.makeRef()));
 					units.insertBefore(newinvoke, stmt);
 					units.insertAfter(newinvoke2, stmt);
 				}
@@ -194,7 +194,7 @@ public class Instrumenter {
 	public static void instrumentPrefetch(Body body) {
 		String bodySig = body.getMethod().getSignature();
 		String triggerMethodWithId = getSigWithId(bodySig,
-				ViolistAnalysisHelper.getTriggerMethods(appfolder));
+				ViolistAnalysisHelper.getTriggerMethods(appFolder));
 		if (triggerMethodWithId != null) {
 			// nodeIds example: 303#299#307
 			String nodeIds = triggerMethodWithId.replace(bodySig + "#", "");
@@ -235,58 +235,71 @@ public class Instrumenter {
 	}
 
 	public static void instrumentSendDef(Body body) {
-		if (ProxyHelper.defSpotMap.containsKey(body.getMethod().getSignature())) {
-			final PatchingChain<Unit> units = body.getUnits();
-			final DefSpot defSpot = ProxyHelper.defSpotMap.get(body.getMethod()
-					.getSignature());
-			// important to use snapshotIterator here
-			for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
-				final Stmt stmt = (Stmt) iter.next();
-				if (stmt.toString().equals(defSpot.getJimple())) {
-					SootClass ProxyClass = Scene.v().loadClassAndSupport(
-							ProxyHelper.ProxyClass);
-					SootMethod sendDefMethod = ProxyClass
-							.getMethod(ProxyHelper.sendDef);
-					if (sendDefMethod == null) {
-						System.out
-								.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!send def method is null!!!");
-					} else {
-						if (!(stmt instanceof AssignStmt)) {
+		List<DefSpot> defSpotList = DefFinder.getDefSpotList(appFolder,
+				apkName, androidJar, pkgName);
+		// System.out.println(defSpotList);
+		// DefSpot defSpot = defSpotList.get(0);
+		for (DefSpot defSpot : defSpotList) {
+			if (defSpot.body.equals(body.getMethod().getSignature())) {
+				final PatchingChain<Unit> units = body.getUnits();
+				// important to use snapshotIterator here
+				for (Iterator<Unit> iter = units.snapshotIterator(); iter
+						.hasNext();) {
+					final Stmt stmt = (Stmt) iter.next();
+					if (stmt.toString().equals(defSpot.getJimple())) {
+						SootClass ProxyClass = Scene.v().loadClassAndSupport(
+								ProxyHelper.ProxyClass);
+						SootMethod sendDefMethod = ProxyClass
+								.getMethod(ProxyHelper.sendDef);
+						if (sendDefMethod == null) {
 							System.out
-									.println("@@@@@@@@@@ stmt is not AssignStmt");
+									.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!send def method is null!!!");
+						} else {
+							if (!(stmt instanceof AssignStmt)) {
+								System.out
+										.println("@@@@@@@@@@ stmt is not AssignStmt");
+							}
+							AssignStmt targetAssign = (AssignStmt) stmt;
+							Value value = targetAssign.getRightOp();
+							// Local index = addTmpInt2Local(body);
+							// Local nodeId = addTmpInt2Local(body);
+							// AssignStmt assignIndex =
+							// Jimple.v().newAssignStmt(index,
+							// IntConstant.v(1));
+							// AssignStmt assignNodeId =
+							// Jimple.v().newAssignStmt(nodeId,
+							// IntConstant.v(307));
+							LinkedList<Value> arglist = new LinkedList<Value>();
+							arglist.add(value);
+							arglist.add(StringConstant.v(defSpot.getNodeId()));// arglist.add(IntConstant.v(307));
+							arglist.add(IntConstant.v(defSpot.getSubStrPos()));//
+							arglist.add(StringConstant.v(defSpot.getPkgName()));
+							Stmt sendDefInvoke = Jimple.v().newInvokeStmt(
+									Jimple.v().newStaticInvokeExpr(
+											sendDefMethod.makeRef(), arglist));
+							System.out.println(sendDefInvoke);
+							// units.insertBefore(assignIndex, targetAssign);
+							// units.insertBefore(assignNodeId, targetAssign);
+							units.insertBefore(sendDefInvoke, targetAssign);
+							return;
 						}
-						AssignStmt targetAssign = (AssignStmt) stmt;
-						Value value = targetAssign.getRightOp();
-						// Local index = addTmpInt2Local(body);
-						// Local nodeId = addTmpInt2Local(body);
-						// AssignStmt assignIndex =
-						// Jimple.v().newAssignStmt(index, IntConstant.v(1));
-						// AssignStmt assignNodeId =
-						// Jimple.v().newAssignStmt(nodeId, IntConstant.v(307));
-						LinkedList<Value> arglist = new LinkedList<Value>();
-						arglist.add(value);
-						arglist.add(IntConstant.v(307));
-						arglist.add(IntConstant.v(1));
-						arglist.add(StringConstant
-								.v("edu.usc.yixue.weatherapp"));
-						Stmt sendDefInvoke = Jimple.v().newInvokeStmt(
-								Jimple.v().newStaticInvokeExpr(
-										sendDefMethod.makeRef(), arglist));
-						// units.insertBefore(assignIndex, targetAssign);
-						// units.insertBefore(assignNodeId, targetAssign);
-						units.insertBefore(sendDefInvoke, targetAssign);
 					}
 				}
 			}
 		}
+		// if
+		// (ProxyHelper.defSpotMap.containsKey(body.getMethod().getSignature()))
+		// {
+		//
+		// }
 	}
 
 	/**
-	 * this method will do the following 
-	 * 1. insert sendDef(...) 
-	 * 2. insert triggerPrefetch(...) before each return statement in each trigger method
-	 * 3. add timestamp before and after each getInputStream
-	 * 4. replace all the getInputStream()
+	 * this method will do the following 1. insert sendDef(...) 2. insert
+	 * triggerPrefetch(...) before each return statement in each trigger method
+	 * 3. add timestamp before and after each getInputStream 4. replace all the
+	 * getInputStream()
+	 * 
 	 * @param body
 	 */
 	public static void instrumentAll(Body body) {

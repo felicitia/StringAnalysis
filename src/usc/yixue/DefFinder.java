@@ -19,11 +19,6 @@ import soot.jimple.Stmt;
 import soot.options.Options;
 
 public class DefFinder {
-
-	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/SmallApps/App94"; 
-	final static String apkName = "com.androidlab.videoroad.apk";
-	final static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
-	final static String pkgName = "com.androidlab.videoroad";
 	static List<DefSpot> defSpotList = null;
 	static List<TargetField> targetFieldList = null;
 
@@ -65,7 +60,7 @@ public class DefFinder {
 	}
 	
 	// read from targetField.csv
-	public static List<TargetField> getTargetFieldList(){
+	public static List<TargetField> getTargetFieldList(String appFolder, String pkgName){
 		if(targetFieldList == null){
 			targetFieldList = new ArrayList<TargetField>();
 			String csvFilePath = appFolder+"/Input/targetField.csv";
@@ -115,12 +110,12 @@ public class DefFinder {
 				Options.v().set_process_dir(stringlist);
 	}
 	
-	public static List<DefSpot> getDefSpotList(){
+	public static List<DefSpot> getDefSpotList(String appFolder, String apkName, String androidJar, String pkgName){
 		if(defSpotList == null){
 			defSpotList = new ArrayList<DefSpot>();
 			sootSettingAndroid(appFolder+"/"+apkName, androidJar);
 			 
-			for(TargetField field: getTargetFieldList()){
+			for(TargetField field: getTargetFieldList(appFolder, pkgName)){
 				defSpotList.addAll(createDefSpots(field));
 			}
 			for(DefSpot defSpot: defSpotList){

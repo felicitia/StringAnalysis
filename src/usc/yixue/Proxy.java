@@ -37,7 +37,7 @@ public class Proxy {
 		return null;
 	}
 
-	public static void sendDef(String value, int nodeId, int index,
+	public static void sendDef(String value, String nodeId, int index,
 			String pkgName) {
 		System.out.println("Proxy: sendDef :)");
 		System.out.println("args = "+ value+"\t"+nodeId+"\t"+index+"\t"+pkgName);

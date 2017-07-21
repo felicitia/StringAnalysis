@@ -17,7 +17,7 @@ public class ProxyHelper {
 	/**
 	 * change this to list? Body shouldn't be the key, cause it might be duplicated, e.g., one method contains multiple def spots
 	 */
-	public final static HashMap<String, DefSpot> defSpotMap = new HashMap<String, DefSpot>(); //body is the key
+//	public final static HashMap<String, DefSpot> defSpotMap = new HashMap<String, DefSpot>(); //body is the key
 
 	final static String ProxyClass = "usc.yixue.Proxy";
 
@@ -30,7 +30,7 @@ public class ProxyHelper {
 	final static String openStreamOriginal = "<java.net.URL: java.io.InputStream openStream()>";
 	final static String openStreamNew = "java.io.InputStream openStream(java.net.URL)";
 	
-	final static String sendDef = "void sendDef(java.lang.String,int,int,java.lang.String)";
+	final static String sendDef = "void sendDef(java.lang.String,java.lang.String,int,java.lang.String)";
 
 	final static String printTimeStamp = "void printTimeStamp()";
 	
@@ -38,13 +38,13 @@ public class ProxyHelper {
 	
 	static {
 		jimpleReplaceMap.put(getInputStreamOriginal, getInputStreamNew);
-		DefSpot defSpot = new DefSpot();
-		defSpot.setJimple("$r0.<edu.usc.yixue.weatherapp.MainActivity: java.lang.String favCityId> = $r9");
-		defSpot.setNodeId("307");
-		defSpot.setPkgName("edu.usc.yixue.weatherapp");
-		defSpot.setSubStrPos(1);
-		defSpot.setBody("<edu.usc.yixue.weatherapp.MainActivity: void onCreate(android.os.Bundle)>");
-		defSpotMap.put(defSpot.getBody(), defSpot);
+//		DefSpot defSpot = new DefSpot();
+//		defSpot.setJimple("$r0.<edu.usc.yixue.weatherapp.MainActivity: java.lang.String favCityId> = $r9");
+//		defSpot.setNodeId("307");
+//		defSpot.setPkgName("edu.usc.yixue.weatherapp");
+//		defSpot.setSubStrPos(1);
+//		defSpot.setBody("<edu.usc.yixue.weatherapp.MainActivity: void onCreate(android.os.Bundle)>");
+//		defSpotMap.put(defSpot.getBody(), defSpot);
 		
 		// instrument "saveUserImage" body
 		InstrumentStmt getContentInstr = new InstrumentStmt();
