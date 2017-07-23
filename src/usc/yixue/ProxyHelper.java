@@ -21,14 +21,14 @@ public class ProxyHelper {
 
 	final static String ProxyClass = "usc.yixue.Proxy";
 
-	final static String getContentOriginal = "<java.net.URLConnection: java.lang.Object getContent()>";
-	final static String getContentNew = "java.lang.Object getContent(java.net.URLConnection)";
+//	final static String getContentOriginal = "<java.net.URLConnection: java.lang.Object getContent()>";
+//	final static String getContentNew = "java.lang.Object getContent(java.net.URLConnection)";
 
 	final static String getInputStreamOriginal = "<java.net.URLConnection: java.io.InputStream getInputStream()>";
 	final static String getInputStreamNew = "java.io.InputStream getInputStream(java.net.URLConnection)";
 
-	final static String openStreamOriginal = "<java.net.URL: java.io.InputStream openStream()>";
-	final static String openStreamNew = "java.io.InputStream openStream(java.net.URL)";
+//	final static String openStreamOriginal = "<java.net.URL: java.io.InputStream openStream()>";
+//	final static String openStreamNew = "java.io.InputStream openStream(java.net.URL)";
 	
 	final static String sendDef = "void sendDef(java.lang.String,java.lang.String,int,java.lang.String)";
 
@@ -47,19 +47,19 @@ public class ProxyHelper {
 //		defSpotMap.put(defSpot.getBody(), defSpot);
 		
 		// instrument "saveUserImage" body
-		InstrumentStmt getContentInstr = new InstrumentStmt();
-		getContentInstr.jimpleReplacement = getContentNew;
-		getContentInstr.jimpleOriginal = getContentOriginal;
-		getContentInstr.body = "<com.newsblur.util.PrefsUtils: void saveUserImage(android.content.Context,java.lang.String)>";
-		HashSet<InstrumentStmt> set1 = new HashSet<InstrumentStmt>();
-		set1.add(getContentInstr);
-
-		InstrumentStmt openStreamInstr = new InstrumentStmt();
-		openStreamInstr.body = "<com.android.buttonwidget.FetchFromAPI: java.lang.String fetchAddFromAPI(java.lang.String)>";
-		openStreamInstr.jimpleOriginal = openStreamOriginal;
-		openStreamInstr.jimpleReplacement = openStreamNew;
-		HashSet<InstrumentStmt> set2 = new HashSet<InstrumentStmt>();
-		set2.add(openStreamInstr);
+//		InstrumentStmt getContentInstr = new InstrumentStmt();
+//		getContentInstr.jimpleReplacement = getContentNew;
+//		getContentInstr.jimpleOriginal = getContentOriginal;
+//		getContentInstr.body = "<com.newsblur.util.PrefsUtils: void saveUserImage(android.content.Context,java.lang.String)>";
+//		HashSet<InstrumentStmt> set1 = new HashSet<InstrumentStmt>();
+//		set1.add(getContentInstr);
+//
+//		InstrumentStmt openStreamInstr = new InstrumentStmt();
+//		openStreamInstr.body = "<com.android.buttonwidget.FetchFromAPI: java.lang.String fetchAddFromAPI(java.lang.String)>";
+//		openStreamInstr.jimpleOriginal = openStreamOriginal;
+//		openStreamInstr.jimpleReplacement = openStreamNew;
+//		HashSet<InstrumentStmt> set2 = new HashSet<InstrumentStmt>();
+//		set2.add(openStreamInstr);
 
 		InstrumentStmt getInputStreamInstr = new InstrumentStmt();
 		getInputStreamInstr.body = "";
@@ -68,17 +68,17 @@ public class ProxyHelper {
 		HashSet<InstrumentStmt> set3 = new HashSet<InstrumentStmt>();
 		set3.add(getInputStreamInstr);
 
-		instrumentMap
-				.put("<com.newsblur.util.PrefsUtils: void saveUserImage(android.content.Context,java.lang.String)>",
-						set1);
-		instrumentMap
-				.put("<com.android.buttonwidget.FetchFromAPI: java.lang.String fetchAddFromAPI(java.lang.String)>",
-						set2);
+//		instrumentMap
+//				.put("<com.newsblur.util.PrefsUtils: void saveUserImage(android.content.Context,java.lang.String)>",
+//						set1);
+//		instrumentMap
+//				.put("<com.android.buttonwidget.FetchFromAPI: java.lang.String fetchAddFromAPI(java.lang.String)>",
+//						set2);
 
 	}
 
 	/**
-	 * the body is known, then query "instrumentMap"
+	 * if the body is known, then query "instrumentMap"
 	 * 
 	 * @param original
 	 * @return
@@ -99,7 +99,7 @@ public class ProxyHelper {
 	}
 
 	/**
-	 * the body is not known, then query "jimpleReplaceMap", which will replace
+	 * if the body is not known, then query "jimpleReplaceMap", which will replace
 	 * every method no matter what body it belongs
 	 * 
 	 * @param original

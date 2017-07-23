@@ -50,6 +50,6 @@ public class Proxy {
 
 	public static void printTimeStamp(){
 		Long time = System.currentTimeMillis(); 
-		System.out.println(time.toString());
+		System.out.println("Yixue: timestamp = "+time.toString());
 	}
 }

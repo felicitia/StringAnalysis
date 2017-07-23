@@ -33,11 +33,13 @@ import soot.options.Options;
 public class Instrumenter {
 
 	private static int tmpCount = 0;
-
-	final static String apkName = "app-release.apk";
-	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/weatherapp";
-	final static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
-	final static String pkgName = "edu.usc.yixue.weatherapp";
+	private static String apkName = "weatherapp.apk";
+	private static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/weatherapp";
+	private static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
+	private static String pkgName = "edu.usc.yixue.weatherapp";
+	private static boolean ALL = true;
+	private static boolean ONLYTIMESTAMP = false;
+	private static boolean instrumentOption = ONLYTIMESTAMP;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -46,7 +48,11 @@ public class Instrumenter {
 		Options.v().set_src_prec(Options.src_prec_apk);
 		// output as APK, too//-f J
 		Options.v().set_output_format(Options.output_format_dex);
-		Options.v().set_output_dir(appFolder + "/Output");
+		if (instrumentOption == ALL) {
+			Options.v().set_output_dir(appFolder + "/NewApp");
+		} else {
+			Options.v().set_output_dir(appFolder + "/OldAppWithTimestamp");
+		}
 		Options.v().set_android_jars(androidJar);
 		Options.v().set_whole_program(true);
 		Options.v().set_verbose(false);
@@ -64,7 +70,7 @@ public class Instrumenter {
 		Options.v().set_prepend_classpath(true);
 
 		List<String> stringlist = new LinkedList<String>();
-		stringlist.add(appFolder + "/" + apkName);
+		stringlist.add(args[2]);
 		Options.v().set_process_dir(stringlist);
 
 		Scene.v().addBasicClass("java.io.PrintStream", SootClass.SIGNATURES);
@@ -81,11 +87,13 @@ public class Instrumenter {
 					protected void internalTransform(final Body body,
 							String phaseName,
 							@SuppressWarnings("rawtypes") Map options) {
-						// instrumentAll(body);
-						// instrumentTimestamp(body,
-						// ProxyHelper.getInputStreamOriginal);
-						instrumentSendDef(body);
-						body.validate();
+						if (instrumentOption == ALL) {
+							instrumentAll(body);
+						}else{
+							instrumentTimestamp(body,
+									ProxyHelper.getInputStreamOriginal);
+							body.validate();
+						}
 					}
 
 				}));
@@ -196,8 +204,8 @@ public class Instrumenter {
 		String triggerMethodWithId = getSigWithId(bodySig,
 				ViolistAnalysisHelper.getTriggerMethods(appFolder));
 		if (triggerMethodWithId != null) {
-			// nodeIds example: 303#299#307
-			String nodeIds = triggerMethodWithId.replace(bodySig + "#", "");
+			// nodeIds example: 303@299@307
+			String nodeIds = triggerMethodWithId.replace(bodySig + "@", "");
 			final PatchingChain<Unit> units = body.getUnits();
 			// important to use snapshotIterator here
 			for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
@@ -287,11 +295,6 @@ public class Instrumenter {
 				}
 			}
 		}
-		// if
-		// (ProxyHelper.defSpotMap.containsKey(body.getMethod().getSignature()))
-		// {
-		//
-		// }
 	}
 
 	/**
