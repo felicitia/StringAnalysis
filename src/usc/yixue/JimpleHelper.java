@@ -18,15 +18,15 @@ public class JimpleHelper {
 //	static private Set<SootClass> appclasses = new HashSet<SootClass>();
 //	static private Set<String> methodsignatures = new HashSet<String>();
 //	static private Set<SootMethod> allmethods = new HashSet<SootMethod>();
-	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/SelectedApks/App/sootOutput";
+	final static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/SmallApps/App171/sootOutput";
 //	final static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-//		System.out.println("counter = "+urlCounter());
-		String FINALIZER_CLASS_NAME = "com.google.inject.internal.util.$Finalizer";
-		String finalizerPath = FINALIZER_CLASS_NAME.replace('.', '/') + ".class";
-		System.out.println(finalizerPath.length());
+		System.out.println("counter = "+urlCounter());
+//		String FINALIZER_CLASS_NAME = "com.google.inject.internal.util.$Finalizer";
+//		String finalizerPath = FINALIZER_CLASS_NAME.replace('.', '/') + ".class";
+//		System.out.println(finalizerPath.length());
 		
 //		moveTargetJimple("/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/SmallApps");
 	}
@@ -62,10 +62,10 @@ public class JimpleHelper {
 	}
 
 	/**
-	 * move the target jimple files from sootOutput to ../targetJimple 
+	 * copy the target jimple files from sootOutput to ../targetJimple 
 	 * @param dirpath
 	 */
-	public static void moveTargetJimple(String dirpath){
+	public static void copyTargetJimple(String dirpath){
 		Set<String> targetJimples = new HashSet<String>();
 		File rootDir = new File(dirpath);
 		String[] appDirs = rootDir.list();
@@ -99,7 +99,7 @@ public class JimpleHelper {
 						targetJimpleFolder.mkdir();
 					}
 					try {
-						Files.move(jimpleFile, new File(dirpath+"/"+appDir+"/targetJimple/"+jimpleFile.getName()));
+						Files.copy(jimpleFile, new File(dirpath+"/"+appDir+"/targetJimple/"+jimpleFile.getName()));
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
