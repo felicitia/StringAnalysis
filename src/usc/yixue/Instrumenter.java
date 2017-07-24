@@ -33,17 +33,22 @@ import soot.options.Options;
 public class Instrumenter {
 
 	private static int tmpCount = 0;
-	private static String apkName = "weatherapp.apk";
-	private static String appFolder = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/weatherapp";
-	private static String androidJar = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/Android";
-	private static String pkgName = "edu.usc.yixue.weatherapp";
+	private static String apkName; //args3
+	private static String appFolder;//args4
+	private static String pkgName;//args5
+	private static String androidJar;//args6
 	private static boolean ALL = true;
 	private static boolean ONLYTIMESTAMP = false;
-	private static boolean instrumentOption = ONLYTIMESTAMP;
+	private static boolean instrumentOption;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
+		apkName = args[3];
+		appFolder = args[4];
+		androidJar = args[5];
+		pkgName = args[6];
+		instrumentOption = Boolean.parseBoolean(args[7]);
 		// prefer Android APK files// -src-prec apk
 		Options.v().set_src_prec(Options.src_prec_apk);
 		// output as APK, too//-f J
@@ -92,13 +97,14 @@ public class Instrumenter {
 						}else{
 							instrumentTimestamp(body,
 									ProxyHelper.getInputStreamOriginal);
-							body.validate();
 						}
+						body.validate();
 					}
 
 				}));
 
-		soot.Main.main(args);
+		String[] sootArgs = {args[0], args[1], args[2]};
+		soot.Main.main(sootArgs);
 	}
 
 	/**
