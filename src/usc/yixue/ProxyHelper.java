@@ -32,7 +32,7 @@ public class ProxyHelper {
 	
 	final static String sendDef = "void sendDef(java.lang.String,java.lang.String,int,java.lang.String)";
 
-	final static String printTimeStamp = "void printTimeStamp()";
+	final static String printTimeStamp = "void printTimeStamp(java.lang.String)";
 	
 	final static String triggerPrefetch = "void triggerPrefetch(java.lang.String)";
 	

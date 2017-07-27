@@ -1,5 +1,7 @@
 package usc.yixue;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,14 +35,16 @@ import soot.options.Options;
 public class Instrumenter {
 
 	private static int tmpCount = 0;
-	private static String apkName; //args3
-	private static String appFolder;//args4
-	private static String pkgName;//args5
-	private static String androidJar;//args6
-	private static boolean ALL = true;
-	private static boolean ONLYTIMESTAMP = false;
-	private static boolean instrumentOption;
-
+	private static String apkName; // args3
+	private static String appFolder;// args4
+	private static String pkgName;// args5
+	private static String androidJar;// args6
+	private static short ALL = 1;
+	private static short ONLYTIMESTAMP = 2;
+	private static short instrumentOption;
+	private static int timestampCounter = 0;
+	private static PrintWriter pw2timestamp = null;
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
@@ -48,14 +52,19 @@ public class Instrumenter {
 		appFolder = args[4];
 		androidJar = args[5];
 		pkgName = args[6];
-		instrumentOption = Boolean.parseBoolean(args[7]);
+		instrumentOption = Short.parseShort(args[7]);
+		try{
+			pw2timestamp = new PrintWriter(appFolder+"/Output/timestamp.txt", "UTF-8");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		// prefer Android APK files// -src-prec apk
 		Options.v().set_src_prec(Options.src_prec_apk);
 		// output as APK, too//-f J
 		Options.v().set_output_format(Options.output_format_dex);
 		if (instrumentOption == ALL) {
 			Options.v().set_output_dir(appFolder + "/NewApp");
-		} else {
+		} else if (instrumentOption == ONLYTIMESTAMP) {
 			Options.v().set_output_dir(appFolder + "/OldAppWithTimestamp");
 		}
 		Options.v().set_android_jars(androidJar);
@@ -94,7 +103,7 @@ public class Instrumenter {
 							@SuppressWarnings("rawtypes") Map options) {
 						if (instrumentOption == ALL) {
 							instrumentAll(body);
-						}else{
+						} else {
 							instrumentTimestamp(body,
 									ProxyHelper.getInputStreamOriginal);
 						}
@@ -103,8 +112,10 @@ public class Instrumenter {
 
 				}));
 
-		String[] sootArgs = {args[0], args[1], args[2]};
+		String[] sootArgs = { args[0], args[1], args[2] };
 		soot.Main.main(sootArgs);
+		pw2timestamp.println("timestamp counter = " + timestampCounter);
+		pw2timestamp.close();
 	}
 
 	/**
@@ -120,22 +131,27 @@ public class Instrumenter {
 			if (stmt.containsInvokeExpr()) {
 				InvokeExpr invoke = stmt.getInvokeExpr();
 				if (invoke.getMethod().getSignature().equals(sig)) {
+					timestampCounter++;
 					SootMethod printTimeStamp = ProxyHelper
 							.findMethod(ProxyHelper.printTimeStamp);
-					System.out.println("@@@@@@@@@@ sm = "
-							+ printTimeStamp.getSignature());
+
+					pw2timestamp.println("Stmt: " + stmt);
+					pw2timestamp.println("BodyMethodSig: " + body.getMethod().getSignature());
+					pw2timestamp.println();
+					LinkedList<Value> arglist = new LinkedList<Value>();
+					arglist.add(StringConstant.v(stmt.toString()));
+
 					Stmt newinvoke = Jimple.v().newInvokeStmt(
 							Jimple.v().newStaticInvokeExpr(
-									printTimeStamp.makeRef()));
+									printTimeStamp.makeRef(), arglist));
 					Stmt newinvoke2 = Jimple.v().newInvokeStmt(
 							Jimple.v().newStaticInvokeExpr(
-									printTimeStamp.makeRef()));
+									printTimeStamp.makeRef(), arglist));
 					units.insertBefore(newinvoke, stmt);
 					units.insertAfter(newinvoke2, stmt);
 				}
 			}
 		}
-
 	}
 
 	// private static Local addTmpRef(Body body) {

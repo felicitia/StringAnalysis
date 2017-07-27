@@ -48,7 +48,7 @@ public class Proxy {
 		return null;
 	}
 
-	public static void printTimeStamp(){
+	public static void printTimeStamp(String sig){
 		Long time = System.currentTimeMillis(); 
 		System.out.println("Yixue: timestamp = "+time.toString());
 	}
