@@ -52,4 +52,12 @@ public class Proxy {
 		Long time = System.currentTimeMillis(); 
 		System.out.println("Yixue: timestamp = "+time.toString());
 	}
+	
+	public static void printTimeDiff(String sig, long timeDiff){
+		System.out.println(sig+"###"+timeDiff);
+	}
+	
+	public static long getTimeStamp(){
+		return System.currentTimeMillis();
+	}
 }

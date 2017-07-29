@@ -34,6 +34,10 @@ public class ProxyHelper {
 
 	final static String printTimeStamp = "void printTimeStamp(java.lang.String)";
 	
+	final static String printeTimeDiff = "void printTimeDiff(java.lang.String,long)";
+	
+	final static String getTimeStamp = "long getTimeStamp()";
+	
 	final static String triggerPrefetch = "void triggerPrefetch(java.lang.String)";
 	
 	static {

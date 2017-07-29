@@ -11,6 +11,7 @@ import java.util.Set;
 import soot.Body;
 import soot.BodyTransformer;
 import soot.Local;
+import soot.LongType;
 import soot.PackManager;
 import soot.PatchingChain;
 import soot.RefType;
@@ -21,6 +22,7 @@ import soot.Transform;
 import soot.Unit;
 import soot.Value;
 import soot.ValueBox;
+import soot.JastAddJ.SubExpr;
 import soot.jimple.AssignStmt;
 import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
@@ -43,8 +45,8 @@ public class Instrumenter {
 	private static short ONLYTIMESTAMP = 2;
 	private static short instrumentOption;
 	private static int timestampCounter = 0;
-	private static PrintWriter pw2timestamp = null;
-	
+	private static PrintWriter timeStampPrintWriter = null;
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
@@ -53,8 +55,9 @@ public class Instrumenter {
 		androidJar = args[5];
 		pkgName = args[6];
 		instrumentOption = Short.parseShort(args[7]);
-		try{
-			pw2timestamp = new PrintWriter(appFolder+"/Output/timestamp.txt", "UTF-8");
+		try {
+			timeStampPrintWriter = new PrintWriter(appFolder
+					+ "/Output/timestamp.txt", "UTF-8");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -114,8 +117,8 @@ public class Instrumenter {
 
 		String[] sootArgs = { args[0], args[1], args[2] };
 		soot.Main.main(sootArgs);
-		pw2timestamp.println("timestamp counter = " + timestampCounter);
-		pw2timestamp.close();
+		timeStampPrintWriter.println("timestamp counter = " + timestampCounter);
+		timeStampPrintWriter.close();
 	}
 
 	/**
@@ -129,26 +132,54 @@ public class Instrumenter {
 		for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
 			final Stmt stmt = (Stmt) iter.next();
 			if (stmt.containsInvokeExpr()) {
+				// System.out.println("invoke stmt = "+stmt);
 				InvokeExpr invoke = stmt.getInvokeExpr();
-				if (invoke.getMethod().getSignature().equals(sig)) {
+				// if (invoke.getMethod().getSignature().equals(sig))
+				if (invoke.getMethod().getSignature().contains("URLConnection")) {
 					timestampCounter++;
-					SootMethod printTimeStamp = ProxyHelper
-							.findMethod(ProxyHelper.printTimeStamp);
+					
+//					SootMethod printTimeStamp = ProxyHelper
+//							.findMethod(ProxyHelper.printTimeStamp);
+					SootMethod getTimeStamp = ProxyHelper
+							.findMethod(ProxyHelper.getTimeStamp);
+					SootMethod printTimeDiff = ProxyHelper.findMethod(ProxyHelper.printeTimeDiff);
 
-					pw2timestamp.println("Stmt: " + stmt);
-					pw2timestamp.println("BodyMethodSig: " + body.getMethod().getSignature());
-					pw2timestamp.println();
+					timeStampPrintWriter.println("Stmt: " + stmt);
+					timeStampPrintWriter.println("BodyMethodSig: "
+							+ body.getMethod().getSignature());
+					timeStampPrintWriter.println();
+
+//					Stmt newinvoke = Jimple.v().newInvokeStmt(
+//							Jimple.v().newStaticInvokeExpr(
+//									printTimeStamp.makeRef(), arglist));
+//					Stmt newinvoke2 = Jimple.v().newInvokeStmt(
+//							Jimple.v().newStaticInvokeExpr(
+//									printTimeStamp.makeRef(), arglist));
+//					units.insertBefore(newinvoke, stmt);
+//					units.insertAfter(newinvoke2, stmt);
+
+					Stmt getTimeStampInvoke = Jimple.v().newInvokeStmt(
+							Jimple.v().newStaticInvokeExpr(
+									getTimeStamp.makeRef()));
+					Local timeStamp1 = addTmpLong2Local(body);
+					Stmt assignTimeStampBefore = Jimple.v().newAssignStmt(
+							timeStamp1, getTimeStampInvoke.getInvokeExpr());
+					Local timeStamp2 = addTmpLong2Local(body);
+					Stmt assignTimeStampAfter = Jimple.v().newAssignStmt(
+							timeStamp2, getTimeStampInvoke.getInvokeExpr());
+					Local timeDiff = addTmpLong2Local(body);
+					Stmt assignTimeDiff = Jimple.v().newAssignStmt(
+							timeDiff, Jimple.v().newSubExpr(timeStamp2, timeStamp1));
+
 					LinkedList<Value> arglist = new LinkedList<Value>();
 					arglist.add(StringConstant.v(stmt.toString()));
-
-					Stmt newinvoke = Jimple.v().newInvokeStmt(
-							Jimple.v().newStaticInvokeExpr(
-									printTimeStamp.makeRef(), arglist));
-					Stmt newinvoke2 = Jimple.v().newInvokeStmt(
-							Jimple.v().newStaticInvokeExpr(
-									printTimeStamp.makeRef(), arglist));
-					units.insertBefore(newinvoke, stmt);
-					units.insertAfter(newinvoke2, stmt);
+					arglist.add(timeDiff);
+					Stmt printTimeDiffInvoke = Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(printTimeDiff.makeRef(), arglist));
+					
+					units.insertBefore(assignTimeStampBefore, stmt);
+					units.insertAfter(printTimeDiffInvoke, stmt);
+					units.insertAfter(assignTimeDiff, stmt);
+					units.insertAfter(assignTimeStampAfter, stmt);
 				}
 			}
 		}
@@ -173,6 +204,13 @@ public class Instrumenter {
 				RefType.v("java.lang.Integer"));
 		body.getLocals().add(tmpInt);
 		return tmpInt;
+	}
+	
+	private static Local addTmpLong2Local(Body body){
+		Local tmpLong = Jimple.v().newLocal("tmpLong" + (tmpCount++),
+				LongType.v());
+		body.getLocals().add(tmpLong);
+		return tmpLong;
 	}
 
 	public static void instrumentWithBody(Body body) {
