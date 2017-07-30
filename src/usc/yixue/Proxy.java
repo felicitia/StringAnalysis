@@ -37,7 +37,7 @@ public class Proxy {
 		return null;
 	}
 
-	public static void sendDef(String value, String nodeId, int index,
+	public static void sendDef(String body, String sig, String value, String nodeId, int index,
 			String pkgName) {
 		System.out.println("Proxy: sendDef :)");
 		System.out.println("args = "+ value+"\t"+nodeId+"\t"+index+"\t"+pkgName);
@@ -53,10 +53,12 @@ public class Proxy {
 		System.out.println("Yixue: timestamp = "+time.toString());
 	}
 	
-	public static void printTimeDiff(String sig, long timeDiff){
+	public static void printTimeDiff(String body, String sig, long timeDiff){
 		System.out.println(sig+"###"+timeDiff);
 	}
-	
+	public static void printUrl(String body, String sig, String value){
+		System.out.println(body+"###"+sig+"###"+value);
+	}
 	public static long getTimeStamp(){
 		return System.currentTimeMillis();
 	}

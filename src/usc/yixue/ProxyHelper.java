@@ -26,19 +26,19 @@ public class ProxyHelper {
 
 	final static String getInputStreamOriginal = "<java.net.URLConnection: java.io.InputStream getInputStream()>";
 	final static String getInputStreamNew = "java.io.InputStream getInputStream(java.net.URLConnection)";
+	
+	final static String newURLOriginal = "<java.net.URL: void <init>(java.lang.String)>";
+	final static String getResponseCodeOriginal = "<java.net.HttpURLConnection: int getResponseCode()>";
 
 //	final static String openStreamOriginal = "<java.net.URL: java.io.InputStream openStream()>";
 //	final static String openStreamNew = "java.io.InputStream openStream(java.net.URL)";
 	
-	final static String sendDef = "void sendDef(java.lang.String,java.lang.String,int,java.lang.String)";
-
+	final static String sendDef = "void sendDef(java.lang.String,java.lang.String,java.lang.String,java.lang.String,int,java.lang.String)";
 	final static String printTimeStamp = "void printTimeStamp(java.lang.String)";
-	
-	final static String printeTimeDiff = "void printTimeDiff(java.lang.String,long)";
-	
+	final static String printeTimeDiff = "void printTimeDiff(java.lang.String,java.lang.String,long)";
 	final static String getTimeStamp = "long getTimeStamp()";
-	
 	final static String triggerPrefetch = "void triggerPrefetch(java.lang.String)";
+	final static String printUrl = "void printUrl(java.lang.String,java.lang.String,java.lang.String)";
 	
 	static {
 		jimpleReplaceMap.put(getInputStreamOriginal, getInputStreamNew);

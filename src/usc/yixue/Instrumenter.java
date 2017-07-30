@@ -1,5 +1,6 @@
 package usc.yixue;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
@@ -22,7 +23,6 @@ import soot.Transform;
 import soot.Unit;
 import soot.Value;
 import soot.ValueBox;
-import soot.JastAddJ.SubExpr;
 import soot.jimple.AssignStmt;
 import soot.jimple.IntConstant;
 import soot.jimple.InvokeExpr;
@@ -46,6 +46,7 @@ public class Instrumenter {
 	private static short instrumentOption;
 	private static int timestampCounter = 0;
 	private static PrintWriter timeStampPrintWriter = null;
+	private static PrintWriter urlPrintWriter = null;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -56,8 +57,15 @@ public class Instrumenter {
 		pkgName = args[6];
 		instrumentOption = Short.parseShort(args[7]);
 		try {
+			File createFile = new File(appFolder
+					+ "/Output/timestamp.txt");
+			createFile = new File(appFolder
+					+ "/Output/url.txt");
 			timeStampPrintWriter = new PrintWriter(appFolder
 					+ "/Output/timestamp.txt", "UTF-8");
+			urlPrintWriter = new PrintWriter(appFolder
+					+ "/Output/url.txt",
+					"UTF-8");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -108,8 +116,11 @@ public class Instrumenter {
 							instrumentAll(body);
 						} else {
 							instrumentTimestamp(body,
-									ProxyHelper.getInputStreamOriginal);
+									ProxyHelper.getResponseCodeOriginal);
+							instrumentURL(body, ProxyHelper.newURLOriginal);
+							instrumentSendDef(body);
 						}
+					
 						body.validate();
 					}
 
@@ -119,11 +130,12 @@ public class Instrumenter {
 		soot.Main.main(sootArgs);
 		timeStampPrintWriter.println("timestamp counter = " + timestampCounter);
 		timeStampPrintWriter.close();
+		urlPrintWriter.close();
 	}
 
 	/**
-	 * instrument timestamps before "sig" and after "sig"
-	 * 
+	 * instrument timestamps before "sig" and after "sig" 
+	 * and send timeDiff to Proxy
 	 * @param body
 	 * @param sig
 	 */
@@ -134,29 +146,31 @@ public class Instrumenter {
 			if (stmt.containsInvokeExpr()) {
 				// System.out.println("invoke stmt = "+stmt);
 				InvokeExpr invoke = stmt.getInvokeExpr();
-				// if (invoke.getMethod().getSignature().equals(sig))
-				if (invoke.getMethod().getSignature().contains("URLConnection")) {
+				 if (invoke.getMethod().getSignature().equals(sig))
+//				if (invoke.getMethod().getSignature().contains("URLConnection")) 
+				{
 					timestampCounter++;
-					
-//					SootMethod printTimeStamp = ProxyHelper
-//							.findMethod(ProxyHelper.printTimeStamp);
+
+					// SootMethod printTimeStamp = ProxyHelper
+					// .findMethod(ProxyHelper.printTimeStamp);
 					SootMethod getTimeStamp = ProxyHelper
 							.findMethod(ProxyHelper.getTimeStamp);
-					SootMethod printTimeDiff = ProxyHelper.findMethod(ProxyHelper.printeTimeDiff);
+					SootMethod printTimeDiff = ProxyHelper
+							.findMethod(ProxyHelper.printeTimeDiff);
 
 					timeStampPrintWriter.println("Stmt: " + stmt);
 					timeStampPrintWriter.println("BodyMethodSig: "
 							+ body.getMethod().getSignature());
 					timeStampPrintWriter.println();
 
-//					Stmt newinvoke = Jimple.v().newInvokeStmt(
-//							Jimple.v().newStaticInvokeExpr(
-//									printTimeStamp.makeRef(), arglist));
-//					Stmt newinvoke2 = Jimple.v().newInvokeStmt(
-//							Jimple.v().newStaticInvokeExpr(
-//									printTimeStamp.makeRef(), arglist));
-//					units.insertBefore(newinvoke, stmt);
-//					units.insertAfter(newinvoke2, stmt);
+					// Stmt newinvoke = Jimple.v().newInvokeStmt(
+					// Jimple.v().newStaticInvokeExpr(
+					// printTimeStamp.makeRef(), arglist));
+					// Stmt newinvoke2 = Jimple.v().newInvokeStmt(
+					// Jimple.v().newStaticInvokeExpr(
+					// printTimeStamp.makeRef(), arglist));
+					// units.insertBefore(newinvoke, stmt);
+					// units.insertAfter(newinvoke2, stmt);
 
 					Stmt getTimeStampInvoke = Jimple.v().newInvokeStmt(
 							Jimple.v().newStaticInvokeExpr(
@@ -168,14 +182,17 @@ public class Instrumenter {
 					Stmt assignTimeStampAfter = Jimple.v().newAssignStmt(
 							timeStamp2, getTimeStampInvoke.getInvokeExpr());
 					Local timeDiff = addTmpLong2Local(body);
-					Stmt assignTimeDiff = Jimple.v().newAssignStmt(
-							timeDiff, Jimple.v().newSubExpr(timeStamp2, timeStamp1));
+					Stmt assignTimeDiff = Jimple.v().newAssignStmt(timeDiff,
+							Jimple.v().newSubExpr(timeStamp2, timeStamp1));
 
 					LinkedList<Value> arglist = new LinkedList<Value>();
+					arglist.add(StringConstant.v(body.getMethod().getSignature()));
 					arglist.add(StringConstant.v(stmt.toString()));
 					arglist.add(timeDiff);
-					Stmt printTimeDiffInvoke = Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(printTimeDiff.makeRef(), arglist));
-					
+					Stmt printTimeDiffInvoke = Jimple.v().newInvokeStmt(
+							Jimple.v().newStaticInvokeExpr(
+									printTimeDiff.makeRef(), arglist));
+
 					units.insertBefore(assignTimeStampBefore, stmt);
 					units.insertAfter(printTimeDiffInvoke, stmt);
 					units.insertAfter(assignTimeDiff, stmt);
@@ -205,8 +222,8 @@ public class Instrumenter {
 		body.getLocals().add(tmpInt);
 		return tmpInt;
 	}
-	
-	private static Local addTmpLong2Local(Body body){
+
+	private static Local addTmpLong2Local(Body body) {
 		Local tmpLong = Jimple.v().newLocal("tmpLong" + (tmpCount++),
 				LongType.v());
 		body.getLocals().add(tmpLong);
@@ -338,6 +355,8 @@ public class Instrumenter {
 							// Jimple.v().newAssignStmt(nodeId,
 							// IntConstant.v(307));
 							LinkedList<Value> arglist = new LinkedList<Value>();
+							arglist.add(StringConstant.v(body.getMethod().getSignature()));
+							arglist.add(StringConstant.v(stmt.toString()));
 							arglist.add(value);
 							arglist.add(StringConstant.v(defSpot.getNodeId()));// arglist.add(IntConstant.v(307));
 							arglist.add(IntConstant.v(defSpot.getSubStrPos()));//
@@ -352,6 +371,45 @@ public class Instrumenter {
 							return;
 						}
 					}
+				}
+			}
+		}
+	}
+
+	/***
+	 * instrument after sig, to print out the string value.
+	 * 
+	 * @param body
+	 * @param sig  is new URL(string)
+	 */
+	private static void instrumentURL(Body body, String sig) {
+		final PatchingChain<Unit> units = body.getUnits();
+		for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
+			final Stmt stmt = (Stmt) iter.next();
+			if (stmt.containsInvokeExpr()) {
+				// System.out.println("invoke stmt = "+stmt);
+				InvokeExpr invoke = stmt.getInvokeExpr();
+				if (invoke.getMethod().getSignature().equals(sig)) {
+
+					SootMethod printUrl = ProxyHelper
+							.findMethod(ProxyHelper.printUrl);
+
+					urlPrintWriter.println("Stmt: " + stmt);
+					urlPrintWriter.println("BodyMethodSig: "
+							+ body.getMethod().getSignature());
+					urlPrintWriter.println();
+
+					
+					LinkedList<Value> arglist = new LinkedList<Value>();
+					arglist.add(StringConstant.v(body.getMethod().getSignature()));
+					arglist.add(StringConstant.v(stmt.toString()));
+					arglist.add(invoke.getArg(0));
+
+					Stmt printUrlInvoke = Jimple.v().newInvokeStmt(
+							Jimple.v().newStaticInvokeExpr(
+									printUrl.makeRef(), arglist));
+					
+					units.insertAfter(printUrlInvoke, stmt);
 				}
 			}
 		}
