@@ -32,28 +32,33 @@ public class DefFinder {
 		Scene.v().loadNecessaryClasses();
 //		SootField  field = sootClass.getFieldByName("favCityId");
 		for(SootMethod method: sootClass.getMethods()){
-			Body body = method.retrieveActiveBody();
-			final PatchingChain<Unit> units = body.getUnits();
-			for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
-				final Stmt stmt = (Stmt) iter.next();
-				for(ValueBox defBox: stmt.getDefBoxes()){
+			try{
+				Body body = method.retrieveActiveBody();
+				final PatchingChain<Unit> units = body.getUnits();
+				for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
+					final Stmt stmt = (Stmt) iter.next();
+					for(ValueBox defBox: stmt.getDefBoxes()){
 //					System.out.println(defBox.getValue().getClass().getName());
-					if(defBox.getValue().getClass().getName().contains("Field") ){
-						// ">" is to make sure it's not the other fields that start with the same name
-						// example of defBox.getValue().toString is:  $r0.<edu.usc.yixue.weatherapp.MainActivity: java.lang.String cityName>
-						if(defBox.getValue().toString().contains(field.fieldName+">")){
-							if(!stmt.toString().endsWith(" = null")){
-								DefSpot defSpot = new DefSpot();
-								defSpot.jimple = stmt.toString();
-								defSpot.body = method.getSignature();
-								defSpot.nodeId = field.nodeId;
-								defSpot.pkgName = field.pkgName;
-								defSpot.subStrPos = field.substrPos;
-								defSpotsOfField.add(defSpot);
+						if(defBox.getValue().getClass().getName().contains("Field") ){
+							// ">" is to make sure it's not the other fields that start with the same name
+							// example of defBox.getValue().toString is:  $r0.<edu.usc.yixue.weatherapp.MainActivity: java.lang.String cityName>
+							if(defBox.getValue().toString().contains(field.fieldName+">")){
+								if(!stmt.toString().endsWith(" = null")){
+									DefSpot defSpot = new DefSpot();
+									defSpot.jimple = stmt.toString();
+									defSpot.body = method.getSignature();
+									defSpot.nodeId = field.nodeId;
+									defSpot.pkgName = field.pkgName;
+									defSpot.subStrPos = field.substrPos;
+									defSpotsOfField.add(defSpot);
+								}
 							}
 						}
 					}
 				}
+			}catch(Exception e){
+				e.printStackTrace();
+				continue;
 			}
 		}
 		return defSpotsOfField;
