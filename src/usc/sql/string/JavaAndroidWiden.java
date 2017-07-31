@@ -41,30 +41,30 @@ public class JavaAndroidWiden {
 	private Map<String,List<Integer>> targetSignature;
 	private int targetParaOffset;
 	private int maxloop;
-	public JavaAndroidWiden(String rtjar,String appfolder,String classlist,String apk,Map<String,List<Integer>> targetSignature,int maxloop)
+	public JavaAndroidWiden(String rtjar,String appFolder,String classlist,String apk,Map<String,List<Integer>> targetSignature,int maxloop)
 	{
 		this.targetSignature = targetSignature;
 		this.targetParaOffset = targetParaOffset;
 		this.maxloop = maxloop;
-		InterpretCheckerAndroid(rtjar,appfolder+apk,appfolder+classlist,
-					appfolder+"/MethodSummary/",appfolder+"/Output/", appfolder);
+		InterpretCheckerAndroid(rtjar,appFolder+apk,appFolder+classlist,
+					appFolder+"/MethodSummary/",appFolder+"/Output/", appFolder);
 		
 	}
-	public JavaAndroidWiden(String rtjar,String appfolder,String classlist,Map<String,List<Integer>> targetSignature,int maxloop)
+	public JavaAndroidWiden(String rtjar,String appFolder,String classlist,Map<String,List<Integer>> targetSignature,int maxloop)
 	{
 		this.targetSignature = targetSignature;
 		this.targetParaOffset = targetParaOffset;
 		this.maxloop = maxloop;
-		InterpretCheckerJava(rtjar,appfolder,appfolder+classlist,
-				appfolder+"/MethodSummary/",appfolder+"/Output/");
+		InterpretCheckerJava(rtjar,appFolder,appFolder+classlist,
+				appFolder+"/MethodSummary/",appFolder+"/Output/", appFolder);
 	}
 
 
-	private void InterpretCheckerAndroid(String arg0,String arg1,String arg2,String summaryFolder,String wfolder, String appfolder)
+	private void InterpretCheckerAndroid(String arg0,String arg1,String arg2,String summaryFolder,String wfolder, String appFolder)
 	{
 		//"/home/yingjun/Documents/StringAnalysis/MethodSummary/"
 		//"Usage: rt.jar app_folder classlist.txt"
-		AndroidApp App=new AndroidApp(arg0,arg1,arg2, appfolder);
+		AndroidApp App=new AndroidApp(arg0,arg1,arg2, appFolder);
 		
 		Map<String,Map<String,Set<Variable>>> targetMap = new HashMap<>();
     	Map<String,Set<NodeInterface>> paraMap = new HashMap<>();
@@ -199,7 +199,7 @@ public class JavaAndroidWiden {
     		for(Entry<String,Set<Variable>> en:enout.getValue().entrySet())
     		{
 	    		t1 = System.currentTimeMillis();
-	    		Set<Variable> newIR = replaceExternal(en.getValue(),signature,paraMap,tMap,App);
+	    		Set<Variable> newIR = replaceExternal(en.getValue(),signature,paraMap,tMap,App, appFolder);
 	    		t2 = System.currentTimeMillis();
 	    		totalTranslate += t2-t1;
 	    
@@ -211,7 +211,7 @@ public class JavaAndroidWiden {
 	    		{  	
 		      			
 		    		t1 = System.currentTimeMillis();
-					Interpreter intp = new Interpreter(newIR,fieldMap,3);
+					Interpreter intp = new Interpreter(newIR,fieldMap,3, appFolder);
 					Set<String> value = new HashSet<>();
 					value.addAll(intp.getValueForIR());
 		    		
@@ -262,7 +262,7 @@ public class JavaAndroidWiden {
     	System.out.println("Total Interp: "+ totalInterpret);
 	}
 	
-	private void InterpretCheckerJava(String arg0,String arg1,String arg2,String summaryFolder,String wfolder)
+	private void InterpretCheckerJava(String arg0,String arg1,String arg2,String summaryFolder,String wfolder, String appFolder)
 	{
 		//"/home/yingjun/Documents/StringAnalysis/MethodSummary/"
 		//"Usage: rt.jar app_folder classlist.txt"
@@ -413,7 +413,7 @@ public class JavaAndroidWiden {
     			
     				
 	    		t1 = System.currentTimeMillis();
-	    		Set<Variable> newIR = replaceExternal(en.getValue(),signature,paraMap,tMap,App);
+	    		Set<Variable> newIR = replaceExternal(en.getValue(),signature,paraMap,tMap,App, appFolder);
 	    		t2 = System.currentTimeMillis();
 	    		totalTranslate += t2-t1;
 	    		
@@ -437,7 +437,7 @@ public class JavaAndroidWiden {
 	    		Set<String> value = new HashSet<>();
 	    		
 	    		t1 = System.currentTimeMillis();
-    			Interpreter intp = new Interpreter(newIR,fieldMap,i);
+    			Interpreter intp = new Interpreter(newIR,fieldMap,i, appFolder);
     			
     			value.addAll(intp.getValueForIR());
 
@@ -624,7 +624,7 @@ public class JavaAndroidWiden {
 		else
 			return v;
 	}
-	private Set<Variable> replaceExternal(Set<Variable> IRs,String signature,Map<String,Set<NodeInterface>> paraMap,Map<String,Translator> tMap,JavaApp App)
+	private Set<Variable> replaceExternal(Set<Variable> IRs,String signature,Map<String,Set<NodeInterface>> paraMap,Map<String,Translator> tMap,JavaApp App, String appFolder)
 	{
 		Set<Variable> vSet = new HashSet<>();
 		for(Variable v: IRs)
@@ -641,7 +641,7 @@ public class JavaAndroidWiden {
 	    				else
 	    				{
 	    				String parentSig = App.getCallgraph().getParents(signature).iterator().next();
-	    				newIR.addAll(replaceExternal(copyVar(v),n,tMap.get(parentSig)));
+	    				newIR.addAll(replaceExternal(copyVar(v),n,tMap.get(parentSig), appFolder));
 	    				}
 	    			vSet.addAll(newIR);
 	    		}				
@@ -670,7 +670,7 @@ public class JavaAndroidWiden {
 					for(Variable vv:vSet)
 						copy.add(copyVar(vv));
 					Set<Variable> newIR = new HashSet<>();
-					newIR.addAll(replaceExternal(copy,parentSig, paraMap, tMap, App));
+					newIR.addAll(replaceExternal(copy,parentSig, paraMap, tMap, App, appFolder));
 					return newIR;
 				}
 			}
@@ -678,7 +678,7 @@ public class JavaAndroidWiden {
 		
 	}
 	
-	private Set<Variable> replaceExternal(Set<Variable> IRs,String signature,Map<String,Set<NodeInterface>> paraMap,Map<String,Translator> tMap,AndroidApp App)
+	private Set<Variable> replaceExternal(Set<Variable> IRs,String signature,Map<String,Set<NodeInterface>> paraMap,Map<String,Translator> tMap,AndroidApp App, String appFolder)
 	{
 		Set<Variable> vSet = new HashSet<>();
 		for(Variable v: IRs)
@@ -695,7 +695,7 @@ public class JavaAndroidWiden {
 	    				else
 	    				{
 	    				String parentSig = App.getCallgraph().getParents(signature).iterator().next();
-	    				newIR.addAll(replaceExternal(copyVar(v),n,tMap.get(parentSig)));
+	    				newIR.addAll(replaceExternal(copyVar(v),n,tMap.get(parentSig), appFolder));
 	    				}
 	    			vSet.addAll(newIR);
 	    		}				
@@ -724,7 +724,7 @@ public class JavaAndroidWiden {
 					for(Variable vv:vSet)
 						copy.add(copyVar(vv));
 					Set<Variable> newIR = new HashSet<>();
-					newIR.addAll(replaceExternal(copy,parentSig, paraMap, tMap, App));
+					newIR.addAll(replaceExternal(copy,parentSig, paraMap, tMap, App, appFolder));
 					return newIR;
 				}
 			}
@@ -762,7 +762,7 @@ public class JavaAndroidWiden {
 	}
 	
 	
-	private Set<Variable> replaceExternal(Variable v,NodeInterface n,Translator t)
+	private Set<Variable> replaceExternal(Variable v,NodeInterface n,Translator t, String appFolder)
 	{
 		Set<Variable> returnSet = new HashSet<>();
 		if(v instanceof ExternalPara)
@@ -812,7 +812,7 @@ public class JavaAndroidWiden {
 							newIR.addAll(t.getTranslatedIR(line));
 						}
 						
-						Interpreter ip = new Interpreter(newIR,3);
+						Interpreter ip = new Interpreter(newIR,3, appFolder);
 					//	System.out.println("Outcome: "+ip.getValueForIR());
 						
 						
@@ -835,7 +835,7 @@ public class JavaAndroidWiden {
 				List<Variable> tempOperand = new ArrayList<>();
 				for(Variable operand:operandList)
 				{
-					tempOperand.addAll( replaceExternal(operand,n,t));
+					tempOperand.addAll( replaceExternal(operand,n,t, appFolder));
 				}
 				newOperandList.add(tempOperand);
 			}
@@ -844,7 +844,7 @@ public class JavaAndroidWiden {
 		}
 		else if(v instanceof T)
 		{
-			((T) v).setVariable(replaceExternal(((T) v).getVariable(),n,t).iterator().next());
+			((T) v).setVariable(replaceExternal(((T) v).getVariable(),n,t, appFolder).iterator().next());
 			returnSet.add(v);
 		}
 		else

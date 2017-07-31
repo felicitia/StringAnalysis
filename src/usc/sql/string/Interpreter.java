@@ -32,30 +32,28 @@ public class Interpreter {
 	private Map<Variable,List<Set<String>>> tList = new HashMap<>();
 	
 	// a hack for now
-	public void initStringRMap(){
-		stringRMap = ResourceAnalysis.getStringRMap();
+	public void initStringRMap(String appFolder){
+		stringRMap = ResourceAnalysis.getStringRMap(appFolder);
 	}
 	
-	
-	
-	public Interpreter(Translator t,int maxLoop)
+	public Interpreter(Translator t,int maxLoop, String appFolder)
 	{
 		this.t =t;
 		this.maxLoop = maxLoop;
-		initStringRMap();
+		initStringRMap(appFolder);
 	}
-	public Interpreter(Set<Variable> target,int maxLoop)
+	public Interpreter(Set<Variable> target,int maxLoop, String appFolder)
 	{
 		this.target = target;
 		this.maxLoop = maxLoop;
-		initStringRMap();
+		initStringRMap(appFolder);
 	}
-	public Interpreter(Set<Variable> target,Map<String,Set<String>> fieldMap,int maxLoop)
+	public Interpreter(Set<Variable> target,Map<String,Set<String>> fieldMap,int maxLoop, String appFolder)
 	{
 		this.target = target;
 		this.maxLoop = maxLoop;
 		this.fieldMap = fieldMap;
-		initStringRMap();
+		initStringRMap(appFolder);
 	}
 	public Set<String> getValue(String line)
 	{
@@ -88,20 +86,24 @@ public class Interpreter {
 		{
 			for(String temp:fieldMap.get(fieldName))
 			{
-				if(temp.matches("<.*>"))
-					s.add("Unknown");
-				else
+				if(temp.matches("<.*>")){
+					s.add("Unknown"+fieldName);
+				}
+				else{
 					s.add(temp);
+				}
 			}
 			//s.addAll(fieldMap.get(((ExternalPara) ir).getName()));
 		}
 		else if(fieldName.contains("<"))
 		{
 			//s.add(fieldName);
-			s.add("Unknown");
+			s.add("Unknown"+fieldName);
 		}
-		else 
-			s.add("Unknown");
+		else{
+			s.add("Unknown"+fieldName);
+		}
+			
 			//s.add(fieldName);
 		return s;
 	}
@@ -210,12 +212,10 @@ public class Interpreter {
 				}
 					 */
 					s.addAll(interpretField(((ExternalPara) ir).getName()));
-					
 					//System.out.println("Field:"+((ExternalPara) ir).getName()+": "+s);
 				}
 				else{
-					
-					s.add("Unknown");
+					s.add("Unknown"+((ExternalPara) ir).getName());
 				}
 			}
 			

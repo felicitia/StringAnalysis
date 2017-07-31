@@ -15,26 +15,43 @@ import org.w3c.dom.NodeList;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootField;
+import soot.options.Options;
 
 
 public class ResourceAnalysis {
 
-	static String jimpleStrPath = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/ClasslistGenerator/sootOutput/edu.usc.yixue.weatherapp.R$string.jimple"; //full path
-	static String xmlStrPath = "/Users/felicitia/Documents/workspaces/AndroidStudio/WeatherApp/app/src/main/res/values/strings.xml"; //full path
-	static String strXmlClassName = "edu.usc.yixue.weatherapp.R$string";
+	static String libPath = "/Users/felicitia/Documents/Research/Prefetch/Develop/Ding_Sample/libs";
+	
+	static String appFolder; //args0
+	static String pkgName;
+	static String jimpleStrPath; // = "/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/ClasslistGenerator/sootOutput/edu.usc.yixue.weatherapp.R$string.jimple"; //full path
+	static String xmlStrPath; // = "/Users/felicitia/Documents/workspaces/AndroidStudio/WeatherApp/app/src/main/res/values/strings.xml"; //full path
+	static String strXmlClassName; // = "edu.usc.yixue.weatherapp.R$string";
 	static Map<String, String> stringRMap = null;
 	
 	public static void main(String args[]){
-//		System.out.println(getPkgName("/Users/felicitia/Documents/Research/Prefetch/Develop/Yingjun/oldapp/TestApps/App9"));
+//		System.out.println();
+		appFolder = args[0];
+		pkgName = getPkgName(appFolder);
+		jimpleStrPath = appFolder+"/sootOutput/"+pkgName+".R$string.jimple";
+		xmlStrPath = appFolder+"/decompile/res/values/strings.xml";
+		strXmlClassName = pkgName+".R$string";
+		sootSettingForJimple();
+//		System.out.println(getStringRMap());
 	}
-	public static Map<String, String> getStringRMap(){
+	public static Map<String, String> getStringRMap(String appFolderParam){
 		if(stringRMap != null) {
 			return stringRMap;
 		}
+		appFolder = appFolderParam;
+		pkgName = getPkgName(appFolder);
+		jimpleStrPath = appFolder+"/sootOutput/"+pkgName+".R$string.jimple";
+		xmlStrPath = appFolder+"/decompile/res/values/strings.xml";
+		strXmlClassName = pkgName+".R$string";
+		sootSettingForJimple();
 		stringRMap = new HashMap<String, String>();
 		Map<String, String> stringXml = buildStringXml();
 		Map<String, String> stringJimple = buildStringJimple();
-//		stringRMap.put("2131099671", "http://api.openweathermap.org/data/2.5/");
 //		stringRMap.put("2131099672", "APPID=f46f62442611cdc087b629f6e87c7374");
 		Iterator it = stringJimple.entrySet().iterator();
 	    while (it.hasNext()) {
@@ -53,7 +70,10 @@ public class ResourceAnalysis {
 		Map<String, String> stringJimple = new HashMap<String, String>();
 		File jimpleFile = new File(jimpleStrPath);
 		SootClass stringRClass = Scene.v().loadClassAndSupport(strXmlClassName);
+		System.out.println("strXmlClassName = "+strXmlClassName);
 		for(SootField field: stringRClass.getFields()){
+			System.out.println("field = "+field);
+			System.out.println("field tags = "+field.getTags());
 			String tag = field.getTag("IntegerConstantValueTag").toString();
 			String id = tag.substring("ConstantValue: ".length());
 			stringJimple.put(id, field.getName());
@@ -107,6 +127,18 @@ public class ResourceAnalysis {
 	
 	public static String getXmlStrPath() {
 		return xmlStrPath;
+	}
+	
+	public static void sootSettingForJimple(){
+		Options.v().set_soot_classpath(libPath+"/rt.jar:"+libPath+"/android--1/android.jar"+":"+appFolder+"/sootOutput");
+        Options.v().set_whole_program(true);
+        Options.v().set_verbose(false);
+        Options.v().set_keep_line_number(true);
+        Options.v().set_src_prec(Options.src_prec_jimple);
+        Options.v().set_keep_offset(true);
+        Options.v().set_allow_phantom_refs(true);
+      	Options.v().set_keep_offset(true);
+      	Scene.v().loadNecessaryClasses();
 	}
 	
 }

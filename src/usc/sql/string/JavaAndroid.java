@@ -30,7 +30,6 @@ import usc.sql.ir.InternalVar;
 import usc.sql.ir.T;
 import usc.sql.ir.Variable;
 import usc.yixue.ViolistAnalysisHelper;
-import usc.yixue.Configuration;
 import util.DOTUtil;
 import CallGraph.NewNode;
 import CallGraph.StringCallGraph;
@@ -58,17 +57,17 @@ public class JavaAndroid {
 					appfolder+"/MethodSummary/",appfolder+"/Output/", appfolder);
 		
 	}
-	public JavaAndroid(String rtjar,String appfolder,String classlist,Map<String,List<Integer>> targetSignature, int maxloop)
+	public JavaAndroid(String rtjar,String appFolder,String classlist,Map<String,List<Integer>> targetSignature, int maxloop)
 	{
 		this.targetSignature = targetSignature;
 		this.maxloop = maxloop;
 		targetscanList.add("<java.net.URL: void <init>(java.lang.String)>");
-		InterpretCheckerJava(rtjar,appfolder,appfolder+classlist,
-				appfolder+"/MethodSummary/",appfolder+"/Output/");
+		InterpretCheckerJava(rtjar,appFolder,appFolder+classlist,
+				appFolder+"/MethodSummary/",appFolder+"/Output/", appFolder);
 	}
 
 
-	private void InterpretCheckerAndroid(String rtjar,String apkpath,String classlistPath,String summaryFolder,String wfolder, String appfolder)
+	private void InterpretCheckerAndroid(String rtjar,String apkpath,String classlistPath,String summaryFolder,String wfolder, String appFolder)
 	{
 		/*
 		Set<String> potentialAPI = new HashSet<>();
@@ -82,9 +81,9 @@ public class JavaAndroid {
 		
 		//"/home/yingjun/Documents/StringAnalysis/MethodSummary/"
 		//"Usage: rt.jar app_folder classlist.txt"
-		App=new AndroidApp(rtjar,apkpath,classlistPath, appfolder);
+		App=new AndroidApp(rtjar,apkpath,classlistPath, appFolder);
 		
-		ViolistAnalysisHelper.outputRequestMap(ViolistAnalysisHelper.getTargetStmtList(appfolder), appfolder+"/"+App.getPkgname()+".json");
+		ViolistAnalysisHelper.outputRequestMap(ViolistAnalysisHelper.getTargetStmtList(appFolder), appFolder+"/"+App.getPkgname()+".json");
 		
 		Map<String,Map<String,Set<Variable>>> targetMap = new HashMap<>();
     	Map<String,Set<NodeInterface>> paraMap = new HashMap<>();
@@ -170,7 +169,7 @@ public class JavaAndroid {
 		//print Target Callgraph
 		StringCallGraph strCg = App.getCallgraph();
         DOTGraph cgDot = new DOTGraph("target_call_graph");
-		printTargetCallGraph(strCg, cgDot, appfolder);
+		printTargetCallGraph(strCg, cgDot, appFolder);
 //		printTargetMethods(cgDot);
 		
     	for(CFGInterface cfg:App.getCallgraph().getRTOInterface())
@@ -303,7 +302,7 @@ public class JavaAndroid {
 	    		
 	    		t1 = System.currentTimeMillis();
 
-				Interpreter intp = new Interpreter(newIR,fieldMap,maxloop);
+				Interpreter intp = new Interpreter(newIR,fieldMap,maxloop, appFolder);
 				Set<String> value = new HashSet<>();
 				value.addAll(intp.getValueForIR());
 	    		
@@ -406,7 +405,7 @@ public class JavaAndroid {
 	}
 	
 	
-	private void InterpretCheckerJava(String arg0,String arg1,String arg2,String summaryFolder,String wfolder)
+	private void InterpretCheckerJava(String arg0,String arg1,String arg2,String summaryFolder,String wfolder, String appFolder)
 	{
 		//"/home/yingjun/Documents/StringAnalysis/MethodSummary/"
 		//"Usage: rt.jar app_folder classlist.txt"
@@ -580,7 +579,7 @@ public class JavaAndroid {
 	    		Set<String> value = new HashSet<>();
 	    		
 	    		t1 = System.currentTimeMillis();
-    			Interpreter intp = new Interpreter(newIR,fieldMap,loopCount);
+    			Interpreter intp = new Interpreter(newIR,fieldMap,loopCount, appFolder);
     			
     			value.addAll(intp.getValueForIR());
 
@@ -611,7 +610,6 @@ public class JavaAndroid {
 		    			//bw.newLine();
 		    			for(String s:value)
 		    			{
-		    				
 		    				bw.write(s);
 		    				bw.newLine();
 		    			}
