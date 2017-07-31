@@ -2,6 +2,7 @@ package usc.yixue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -18,13 +19,18 @@ public class Proxy {
 	 * and prefetch if every value is known
 	 * @param nodes
 	 */
-	public static void triggerPrefetch(String nodes){
+	public static void triggerPrefetch(String body, String sig, String nodes, int Prefetch_Method){
 		System.out.println("new prefetch :)");
 	}
 	
 	public static InputStream getInputStream(URLConnection urlconn) throws IOException {
 		System.out.println("new getInputStream :)");
 		return null;
+	}
+	
+	public static int getResponseCode(HttpURLConnection urlConn) throws IOException{
+		System.out.println("new getResponseCode :)");
+		return -1;
 	}
 
 	public static Object getContent(URLConnection urlconn) throws IOException {
@@ -54,7 +60,7 @@ public class Proxy {
 	}
 	
 	public static void printTimeDiff(String body, String sig, long timeDiff){
-		System.out.println(sig+"###"+timeDiff);
+		System.out.println(body+"###"+sig+"###"+timeDiff);
 	}
 	public static void printUrl(String body, String sig, String value){
 		System.out.println(body+"###"+sig+"###"+value);

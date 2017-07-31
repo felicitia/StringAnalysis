@@ -41,8 +41,12 @@ public class Instrumenter {
 	private static String appFolder;// args4
 	private static String pkgName;// args5
 	private static String androidJar;// args6
-	private static short ALL = 1;
-	private static short ONLYTIMESTAMP = 2;
+	private static int Prefetch_Method;// args7
+	final private static int Prefetch_GETINPUTSTREAM = 0;
+	final private static int Prefetch_GETRESPONSECODE = 1;
+	final private static short PREPROCESS = 0;
+	final private static short ALL = 1;
+	final private static short ONLYTIMESTAMP = 2;
 	private static short instrumentOption;
 	private static int timestampCounter = 0;
 	private static PrintWriter timeStampPrintWriter = null;
@@ -56,15 +60,13 @@ public class Instrumenter {
 		androidJar = args[5];
 		pkgName = args[6];
 		instrumentOption = Short.parseShort(args[7]);
+		Prefetch_Method = Integer.parseInt(args[8]);
 		try {
-			File createFile = new File(appFolder
-					+ "/Output/timestamp.txt");
-			createFile = new File(appFolder
-					+ "/Output/url.txt");
+			File createFile = new File(appFolder + "/Output/timestamp.txt");
+			createFile = new File(appFolder + "/Output/url.txt");
 			timeStampPrintWriter = new PrintWriter(appFolder
 					+ "/Output/timestamp.txt", "UTF-8");
-			urlPrintWriter = new PrintWriter(appFolder
-					+ "/Output/url.txt",
+			urlPrintWriter = new PrintWriter(appFolder + "/Output/url.txt",
 					"UTF-8");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -77,6 +79,8 @@ public class Instrumenter {
 			Options.v().set_output_dir(appFolder + "/NewApp");
 		} else if (instrumentOption == ONLYTIMESTAMP) {
 			Options.v().set_output_dir(appFolder + "/OldAppWithTimestamp");
+		}else if(instrumentOption == PREPROCESS){
+			Options.v().set_output_dir(appFolder + "/PreprocessedApp");
 		}
 		Options.v().set_android_jars(androidJar);
 		Options.v().set_whole_program(true);
@@ -114,13 +118,26 @@ public class Instrumenter {
 							@SuppressWarnings("rawtypes") Map options) {
 						if (instrumentOption == ALL) {
 							instrumentAll(body);
-						} else {
-							instrumentTimestamp(body,
-									ProxyHelper.getResponseCodeOriginal);
+						} else if (instrumentOption == PREPROCESS) {
+							if (Prefetch_Method == Prefetch_GETINPUTSTREAM) {
+								instrumentTimestamp(body,
+										ProxyHelper.getInputStreamOriginal);
+							} else if (Prefetch_Method == Prefetch_GETRESPONSECODE) {
+								instrumentTimestamp(body,
+										ProxyHelper.getResponseCodeOriginal);
+							}
 							instrumentURL(body, ProxyHelper.newURLOriginal);
 							instrumentSendDef(body);
+						} else if (instrumentOption == ONLYTIMESTAMP) {
+							if (Prefetch_Method == Prefetch_GETINPUTSTREAM) {
+								instrumentTimestamp(body,
+										ProxyHelper.getInputStreamOriginal);
+							} else if (Prefetch_Method == Prefetch_GETRESPONSECODE) {
+								instrumentTimestamp(body,
+										ProxyHelper.getResponseCodeOriginal);
+							}
 						}
-					
+
 						body.validate();
 					}
 
@@ -134,8 +151,9 @@ public class Instrumenter {
 	}
 
 	/**
-	 * instrument timestamps before "sig" and after "sig" 
-	 * and send timeDiff to Proxy
+	 * instrument timestamps before "sig" and after "sig" and send timeDiff to
+	 * Proxy
+	 * 
 	 * @param body
 	 * @param sig
 	 */
@@ -146,8 +164,9 @@ public class Instrumenter {
 			if (stmt.containsInvokeExpr()) {
 				// System.out.println("invoke stmt = "+stmt);
 				InvokeExpr invoke = stmt.getInvokeExpr();
-				 if (invoke.getMethod().getSignature().equals(sig))
-//				if (invoke.getMethod().getSignature().contains("URLConnection")) 
+//				if (invoke.getMethod().getSignature().equals(sig))
+				 if
+				 (invoke.getMethod().getSignature().contains("URLConnection"))
 				{
 					timestampCounter++;
 
@@ -186,7 +205,8 @@ public class Instrumenter {
 							Jimple.v().newSubExpr(timeStamp2, timeStamp1));
 
 					LinkedList<Value> arglist = new LinkedList<Value>();
-					arglist.add(StringConstant.v(body.getMethod().getSignature()));
+					arglist.add(StringConstant.v(body.getMethod()
+							.getSignature()));
 					arglist.add(StringConstant.v(stmt.toString()));
 					arglist.add(timeDiff);
 					Stmt printTimeDiffInvoke = Jimple.v().newInvokeStmt(
@@ -289,16 +309,18 @@ public class Instrumenter {
 				final Stmt stmt = (Stmt) iter.next();
 				if (stmt instanceof ReturnStmt
 						|| stmt instanceof ReturnVoidStmt) {
-					SootClass ProxyClass = Scene.v().loadClassAndSupport(
-							ProxyHelper.ProxyClass);
-					SootMethod triggerPrefetch = ProxyClass
-							.getMethod(ProxyHelper.triggerPrefetch);
+					SootMethod triggerPrefetch = ProxyHelper
+							.findMethod(ProxyHelper.triggerPrefetch);
 					if (triggerPrefetch == null) {
 						System.out
 								.println(" @@@@@@@@@@@ triggerPrefetch method is null @@@@@@@@!!!");
 					} else {
 						LinkedList<Value> arglist = new LinkedList<Value>();
+						arglist.add(StringConstant.v(body.getMethod()
+								.getSignature()));
+						arglist.add(StringConstant.v(stmt.toString()));
 						arglist.add(StringConstant.v(nodeIds));
+						arglist.add(IntConstant.v(Prefetch_Method));
 						Stmt triggerPrefetchInvoke = Jimple.v().newInvokeStmt(
 								Jimple.v().newStaticInvokeExpr(
 										triggerPrefetch.makeRef(), arglist));
@@ -332,10 +354,8 @@ public class Instrumenter {
 						.hasNext();) {
 					final Stmt stmt = (Stmt) iter.next();
 					if (stmt.toString().equals(defSpot.getJimple())) {
-						SootClass ProxyClass = Scene.v().loadClassAndSupport(
-								ProxyHelper.ProxyClass);
-						SootMethod sendDefMethod = ProxyClass
-								.getMethod(ProxyHelper.sendDef);
+						SootMethod sendDefMethod = ProxyHelper
+								.findMethod(ProxyHelper.sendDef);
 						if (sendDefMethod == null) {
 							System.out
 									.println(" !!!!!!!!!!!!!!!!!!!!!!!!!!!send def method is null!!!");
@@ -355,7 +375,8 @@ public class Instrumenter {
 							// Jimple.v().newAssignStmt(nodeId,
 							// IntConstant.v(307));
 							LinkedList<Value> arglist = new LinkedList<Value>();
-							arglist.add(StringConstant.v(body.getMethod().getSignature()));
+							arglist.add(StringConstant.v(body.getMethod()
+									.getSignature()));
 							arglist.add(StringConstant.v(stmt.toString()));
 							arglist.add(value);
 							arglist.add(StringConstant.v(defSpot.getNodeId()));// arglist.add(IntConstant.v(307));
@@ -380,7 +401,8 @@ public class Instrumenter {
 	 * instrument after sig, to print out the string value.
 	 * 
 	 * @param body
-	 * @param sig  is new URL(string)
+	 * @param sig
+	 *            is new URL(string)
 	 */
 	private static void instrumentURL(Body body, String sig) {
 		final PatchingChain<Unit> units = body.getUnits();
@@ -399,16 +421,16 @@ public class Instrumenter {
 							+ body.getMethod().getSignature());
 					urlPrintWriter.println();
 
-					
 					LinkedList<Value> arglist = new LinkedList<Value>();
-					arglist.add(StringConstant.v(body.getMethod().getSignature()));
+					arglist.add(StringConstant.v(body.getMethod()
+							.getSignature()));
 					arglist.add(StringConstant.v(stmt.toString()));
 					arglist.add(invoke.getArg(0));
 
 					Stmt printUrlInvoke = Jimple.v().newInvokeStmt(
-							Jimple.v().newStaticInvokeExpr(
-									printUrl.makeRef(), arglist));
-					
+							Jimple.v().newStaticInvokeExpr(printUrl.makeRef(),
+									arglist));
+
 					units.insertAfter(printUrlInvoke, stmt);
 				}
 			}
@@ -416,24 +438,80 @@ public class Instrumenter {
 	}
 
 	/**
-	 * this method will do the following 1. insert sendDef(...) 2. insert
-	 * triggerPrefetch(...) before each return statement in each trigger method
-	 * 3. add timestamp before and after each getInputStream 4. replace all the
-	 * getInputStream()
+	 * this method will do the following 
 	 * 
+	 * add timestamp before and after each Prefetch_Method, e.g., getInputStream();
+	 * replace all the Prefetch_Method, e.g., getInputStream();
+	 *  insert sendDef(...) ;
+	 *  insert triggerPrefetch(...) before each return statement in each trigger method;
 	 * @param body
 	 */
 	public static void instrumentAll(Body body) {
 		instrumentSendDef(body);
 		instrumentPrefetch(body);
-		instrumentTimestamp(body, ProxyHelper.getInputStreamOriginal);
-		final PatchingChain<Unit> units = body.getUnits();
+		if (Prefetch_Method == Prefetch_GETINPUTSTREAM) {
+			instrumentTimestamp(body, ProxyHelper.getInputStreamOriginal);
+			replaceMethod(body, ProxyHelper.getInputStreamOriginal);
+		} else if (Prefetch_Method == Prefetch_GETRESPONSECODE) {
+			instrumentTimestamp(body, ProxyHelper.getResponseCodeOriginal);
+			replaceMethod(body, ProxyHelper.getResponseCodeOriginal);
+		}
+	}
+
+	public static void replaceMethod(Body body, String originalSig) {
+		PatchingChain<Unit> units = body.getUnits();
 		// important to use snapshotIterator here
 		for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
 			final Stmt stmt = (Stmt) iter.next();
 			if (stmt.containsInvokeExpr()) {
 				InvokeExpr invoke = stmt.getInvokeExpr();
-				// instrumentTimestamp(invoke, stmt, units);
+				if (invoke.getMethod().getSignature().equals(originalSig)) {
+					SootMethod replaceMethod = ProxyHelper
+							.findMethod(ProxyHelper.getResponseCodeNew);
+					if (replaceMethod != null) {
+						System.out.println("replacement:\n "
+								+ replaceMethod.getSignature());
+						List<Value> arglist = new LinkedList<Value>();
+						for (ValueBox vb : invoke.getUseBoxes()) {
+							arglist.add(vb.getValue());
+						}
+						// Jimple.v().newStaticInvokeExpr(agent.makeRef())
+						if (stmt instanceof AssignStmt) {
+							Value assivalue = ((AssignStmt) stmt).getLeftOp();
+							Stmt newassign = Jimple.v().newAssignStmt(
+									assivalue,
+									Jimple.v().newStaticInvokeExpr(
+											replaceMethod.makeRef(), arglist));
+							units.insertBefore(newassign, stmt);
+							units.remove(stmt);
+
+						} else if (stmt instanceof InvokeStmt) {
+							Stmt newinvoke = Jimple.v().newInvokeStmt(
+									Jimple.v().newStaticInvokeExpr(
+											replaceMethod.makeRef(), arglist));
+							units.insertBefore(newinvoke, stmt);
+							units.remove(stmt);
+
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * replace all the methods according to the jimpleReplaceMap defined in
+	 * ProxyHelper
+	 * 
+	 * @param body
+	 */
+	public static void replaceMethod(Body body) {
+		PatchingChain<Unit> units = body.getUnits();
+		// important to use snapshotIterator here
+		for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
+			final Stmt stmt = (Stmt) iter.next();
+			if (stmt.containsInvokeExpr()) {
+				InvokeExpr invoke = stmt.getInvokeExpr();
 				SootMethod replaceMethod = ProxyHelper
 						.queryReplaceMethod(invoke.getMethod().getSignature());
 				// System.out.println("replacement@@@@@@@@@@" + replaceMethod);
@@ -466,5 +544,4 @@ public class Instrumenter {
 			}
 		}
 	}
-
 }
