@@ -447,27 +447,35 @@ public class Instrumenter {
 	 * @param body
 	 */
 	public static void instrumentAll(Body body) {
+		if (Prefetch_Method == Prefetch_GETINPUTSTREAM) {
+			instrumentTimestamp(body, ProxyHelper.getInputStreamOriginal);
+		} else if (Prefetch_Method == Prefetch_GETRESPONSECODE) {
+			instrumentTimestamp(body, ProxyHelper.getResponseCodeOriginal);
+		}
 		instrumentSendDef(body);
 		instrumentPrefetch(body);
 		if (Prefetch_Method == Prefetch_GETINPUTSTREAM) {
-			instrumentTimestamp(body, ProxyHelper.getInputStreamOriginal);
 			replaceMethod(body, ProxyHelper.getInputStreamOriginal);
 		} else if (Prefetch_Method == Prefetch_GETRESPONSECODE) {
-			instrumentTimestamp(body, ProxyHelper.getResponseCodeOriginal);
 			replaceMethod(body, ProxyHelper.getResponseCodeOriginal);
 		}
 	}
 
 	public static void replaceMethod(Body body, String originalSig) {
-		PatchingChain<Unit> units = body.getUnits();
+		final PatchingChain<Unit> units = body.getUnits();
 		// important to use snapshotIterator here
 		for (Iterator<Unit> iter = units.snapshotIterator(); iter.hasNext();) {
 			final Stmt stmt = (Stmt) iter.next();
 			if (stmt.containsInvokeExpr()) {
 				InvokeExpr invoke = stmt.getInvokeExpr();
+				SootMethod replaceMethod = null;
 				if (invoke.getMethod().getSignature().equals(originalSig)) {
-					SootMethod replaceMethod = ProxyHelper
-							.findMethod(ProxyHelper.getResponseCodeNew);
+					if(Prefetch_Method == Prefetch_GETRESPONSECODE){
+						 replaceMethod = ProxyHelper
+								.findMethod(ProxyHelper.getResponseCodeNew);
+					}else if(Prefetch_Method == Prefetch_GETINPUTSTREAM){
+						replaceMethod = ProxyHelper.findMethod(ProxyHelper.getInputStreamNew);
+					}
 					if (replaceMethod != null) {
 						System.out.println("replacement:\n "
 								+ replaceMethod.getSignature());
